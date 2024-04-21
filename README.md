@@ -16,6 +16,9 @@ ionic cordova platform add electron
 npm install firebase-tools
 ```
 
+## IONIC documentation
+[IONIC documentation](https://test-bc740.web.app/)
+
 ## Support
 
 Drop us a line to logdevel@stipot.com
