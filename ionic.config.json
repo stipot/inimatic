@@ -1,0 +1,7 @@
+{
+  "name": "inimatic",
+  "integrations": {
+    "cordova": {}
+  },
+  "type": "angular-standalone"
+}
