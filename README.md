@@ -3,12 +3,15 @@
 Inimatic - authorization system
 
 # Development Workflow
+## Requirements
+Nodejs 18
 
 ## Installation
 Before proceeding, make sure the latest version of Node.js and npm are installed. See Environment Setup for details. Install the Ionic CLI with npm:
 ```
+npm install -g @ionic/cli
+npm install -g @ionic/angular@latest --save
 npm i -g cordova
-npm install @ionic/angular@latest --save
 ionic cordova platform add android
 ionic cordova platform add electron
 ./functions npm install

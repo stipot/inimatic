@@ -18,6 +18,17 @@
     <p>and point it to the screen</p>
     <p>{{sessionID}}</p>
     <qrcode [qrdata]="sessionID" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
+    <div>
+      <label for="outgoing">Outgoing Signal Data:</label>
+      <textarea id="outgoing" [(ngModel)]="outgoingSignal" readonly></textarea>
+      <button (click)="copyToClipboard(outgoingSignal)">Copy Signal Data</button>
+    </div>
+    <div>
+      <label for="incoming">Incoming Signal Data:</label>
+      <textarea id="incoming" [(ngModel)]="incomingSignal"></textarea>
+    </div>
+    <button (click)="connect()">Connect Using Incoming Data</button>
+    <button (click)="send()">Send Message</button>
 
   </div>
 </ion-content>
