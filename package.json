@@ -1,15 +1,26 @@
 {
   "name": "inimatic",
+  "description": "An Ionic project",
   "version": "0.0.1",
-  "author": "Inimatic - authorization tool",
+  "author": "STIpot",
+  "contributors": [
+    "Dmitry <connect@stipot.com>"
+  ],
   "homepage": "https://inimatic.com/",
+  "eslintConfig": {
+    "extends": "@ionic/eslint-config/recommended"
+  },
+  "prettier": "@ionic/prettier-config",
   "scripts": {
     "ng": "ng",
+    "ionic.serve": "ionic serve",
     "start": "ng serve",
     "build": "ng build",
+    "buildlocal": "npx ng run app:build.local",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "start:api": "nodemon server.js"
   },
   "private": true,
   "dependencies": {
@@ -21,15 +32,10 @@
     "@angular/platform-browser": "^17.0.2",
     "@angular/platform-browser-dynamic": "^17.0.2",
     "@angular/router": "^17.0.2",
-    "@angular/service-worker": "^17.3.6",
-    "@capacitor/app": "6.0.0",
-    "@capacitor/core": "6.0.0",
-    "@capacitor/haptics": "6.0.0",
-    "@capacitor/keyboard": "6.0.0",
-    "@capacitor/status-bar": "6.0.0",
-    "@ionic/angular": "^8.0.1",
+    "@angular/service-worker": "^17.3.7",
+    "@ionic/angular": "^8.0.0",
+    "@ionic/cordova-builders": "^11.0.0",
     "angularx-qrcode": "^17.0.0",
-    "cordova-android": "12.0.1",
     "ionicons": "^7.2.1",
     "process": "^0.11.10",
     "rxjs": "~7.8.0",
@@ -38,7 +44,6 @@
     "zone.js": "~0.14.2"
   },
   "devDependencies": {
-    "@angular-builders/custom-webpack": "^17.0.2",
     "@angular-devkit/build-angular": "^17.0.0",
     "@angular-eslint/builder": "^17.0.0",
     "@angular-eslint/eslint-plugin": "^17.0.0",
@@ -48,18 +53,18 @@
     "@angular/cli": "^17.0.0",
     "@angular/compiler-cli": "^17.0.2",
     "@angular/language-service": "^17.0.2",
-    "@capacitor/cli": "6.0.0",
     "@ionic/angular-toolkit": "^11.0.1",
     "@types/jasmine": "~5.1.0",
     "@types/qrcode": "^1.5.5",
     "@types/simple-peer": "^9.11.8",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
-    "cordova-plugin-device": "2.0.2",
+    "cordova-android": "^12.0.1",
+    "cordova-plugin-device": "2.1.0",
     "cordova-plugin-ionic-keyboard": "^2.0.5",
     "cordova-plugin-ionic-webview": "^5.0.0",
     "cordova-plugin-splashscreen": "5.0.2",
-    "cordova-plugin-statusbar": "^2.4.2",
+    "cordova-plugin-statusbar": "4.0.0",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-jsdoc": "^48.2.1",
@@ -73,7 +78,6 @@
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.2.2"
   },
-  "description": "An Ionic project",
   "cordova": {
     "plugins": {
       "cordova-plugin-statusbar": {},

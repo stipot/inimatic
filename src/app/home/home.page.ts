@@ -1,4 +1,5 @@
 import { Component, NgModule } from '@angular/core'
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms'; // Make sure this import is included
 
 import { IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/angular/standalone'
@@ -11,17 +12,18 @@ import * as SimplePeer from 'simple-peer';
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
   standalone: true,
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent, QRCodeModule, FormsModule],
+  imports: [IonHeader, IonToolbar, IonTitle, IonContent, QRCodeModule, FormsModule, CommonModule],
 })
 export class HomePage {
   sessionID = "090988"
   private peer: SimplePeer.Instance;
   outgoingSignal: string = "";
   incomingSignal: string = "tester";
+  isInitiator
   constructor() {
-    const isInitiator = location.hash === '#init';
-    console.log('Setting up peer, initiator:', isInitiator);
-    this.peer = new SimplePeer({ initiator: isInitiator, trickle: false });
+    this.isInitiator = location.hash !== '#init';
+    console.log('Setting up peer, initiator:', this.isInitiator);
+    this.peer = new SimplePeer({ initiator: this.isInitiator, trickle: false });
 
     this.peer.on('signal', (data: SimplePeer.SignalData) => {
       // This data needs to be sent to the other peer
@@ -29,7 +31,7 @@ export class HomePage {
       this.outgoingSignal = JSON.stringify(data);
     });
 
-    this.peer.on('data', data => {
+    this.peer.on('data', (data: any) => {
       console.log('Received message:', data.toString());
     });
 
@@ -38,11 +40,11 @@ export class HomePage {
       this.outgoingSignal = JSON.stringify(data);
     });
 
-    this.peer.on('error', error => {
+    this.peer.on('error', (error: any) => {
       console.error('Peer connection error:', error);
     });
 
-    this.peer.on('icecandidate', candidate => {
+    this.peer.on('icecandidate', (candidate: any) => {
   if (candidate) {
     console.log('ICE Candidate:', JSON.stringify(candidate));
     // Send this candidate to the other peer

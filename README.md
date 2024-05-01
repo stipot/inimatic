@@ -7,17 +7,26 @@ Inimatic - authorization system
 Nodejs 18
 
 ## Installation
+1. Install Android Studio
+2. Install [JDK](https://www.oracle.com/java/technologies/downloads/)
+3. Set System Path 
+4. $env:NODE_OPTIONS="--openssl-legacy-provider"
 Before proceeding, make sure the latest version of Node.js and npm are installed. See Environment Setup for details. Install the Ionic CLI with npm:
 ```
 npm install -g @ionic/cli
 npm install -g @ionic/angular@latest --save
 npm i -g cordova
+Cordova requirements # Проверка требований
 ionic cordova platform add android
+npm install @ionic/cordova-builders
 ionic cordova platform add electron
 ./functions npm install
 ./functions npm run build
 npm install firebase-tools
 ```
+
+## Setup Android build env
+https://forum.ionicframework.com/t/how-to-create-build-apk-file-for-android-from-ionic-project/230258/7
 
 ## IONIC documentation
 [IONIC documentation](https://test-bc740.web.app/)

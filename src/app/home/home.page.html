@@ -14,8 +14,13 @@
   </ion-header>
 
   <div id="container">
-    <strong>Open Inimatic application on your phone</strong>
-    <p>and point it to the screen</p>
+    <div *ngIf="isInitiator">
+      <strong>Open Inimatic application on your phone</strong>
+      <p>and point it to the screen</p>
+    </div>
+    <div *ngIf="! isInitiator">
+      <strong>Is not Initiator</strong>
+    </div>
     <p>{{sessionID}}</p>
     <qrcode [qrdata]="sessionID" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
     <div>
