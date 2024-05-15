@@ -37,6 +37,7 @@
     "@ionic/cordova-builders": "^11.0.0",
     "angularx-qrcode": "^17.0.0",
     "ionicons": "^7.2.1",
+    "jsqr": "^1.4.0",
     "process": "^0.11.10",
     "rxjs": "~7.8.0",
     "simple-peer": "^9.11.1",
