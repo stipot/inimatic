@@ -2,7 +2,9 @@ import { Component, NgModule, ViewChild, ElementRef } from '@angular/core'
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms'; // Make sure this import is included
 import { ToastController, LoadingController, Platform } from '@ionic/angular';
-import jsQR from 'jsqr';
+import jsQR, { QRCode } from 'jsqr-es6';
+import { addIcons } from "ionicons";
+import { close, camera } from 'ionicons/icons';
 
 import { IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonIcon, IonCard, IonCardContent, IonCardHeader, IonCardTitle } from '@ionic/angular/standalone'
 import { QRCodeModule } from 'angularx-qrcode'
@@ -34,6 +36,7 @@ export class HomePage {
   constructor(private toastCtrl: ToastController,
     private loadingCtrl: LoadingController,
     private plt: Platform) {
+    addIcons({ close, camera });
     const isInStandaloneMode = () =>
       'standalone' in window.navigator && window.navigator['standalone'];
     if (this.plt.is('ios') && isInStandaloneMode()) {
@@ -101,7 +104,15 @@ export class HomePage {
 
   stopScan() {
     this.scanActive = false;
+    const stream = this.videoElement.srcObject;
+    const tracks = stream.getTracks();
+    tracks.forEach(function (track: any) {
+      track.stop();
+    });
+
+    this.videoElement.srcObject = null;
   }
+
   connect() {
     if (this.incomingSignal) {
       console.log('Incoming signal data:', this.incomingSignal);
@@ -148,11 +159,14 @@ export class HomePage {
   }
 
   async scan() {
+    // console.log("Scan started", this.videoElement.readyState, this.videoElement.HAVE_ENOUGH_DATA, this.videoElement)
     if (this.videoElement.readyState === this.videoElement.HAVE_ENOUGH_DATA) {
+      // console.log(this.loading)
       if (this.loading) {
         await this.loading.dismiss();
         this.loading = null;
         this.scanActive = true;
+        // console.log(this.scanActive)
       }
 
       this.canvasElement.height = this.videoElement.videoHeight;
