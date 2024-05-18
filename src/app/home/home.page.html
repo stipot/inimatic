@@ -15,7 +15,7 @@
 
   <div id="container">
     <div *ngIf="isInitiator">
-      <strong>Open Inimatic application on your phone</strong>
+      <strong>1. Open Inimatic application on your phone</strong>
       <p>and point it to the screen</p>
     </div>
     <div *ngIf="! isInitiator">
@@ -56,13 +56,13 @@
   </ion-button>
 
   <!-- Shows our camera stream -->
-  <video #video [hidden]="!scanActive" width="30%"></video>
+  <video #video width="30%"></video>
 
   <!-- Used to render the camera stream images -->
-  <canvas #canvas hidden></canvas>
+  <canvas #canvas></canvas>
 
   <!-- Stop our scanner preview if active -->
-  <ion-button expand="full" (click)="stopScan()" color="danger" *ngIf="scanActive">
+  <ion-button expand="full" (click)="stopScan()" color="danger">
     <ion-icon slot="start" name="close"></ion-icon>
     Stop scan
   </ion-button>
