@@ -25,6 +25,17 @@ ionic cordova platform add electron
 npm install firebase-tools
 ```
 
+## Setup build Android
+
+1. Path to SDK 
+Create new file --> Project--> Platform --> android--> local.properties
+and keep this --> sdk.dir=/path/sdk example [sdk.dir=/Users/admin/Library/Android/sdk]
+2. Android Studio/Settings/Android SDK/
+> https://stackoverflow.com/questions/67398608/unable-to-determine-android-sdk
+- Android SDK Build-Tools 33.0.2 version 33.0.2
+3. Install
+- Sources for Android 32 (sources;android-32)
+
 ## Setup Android build env
 https://forum.ionicframework.com/t/how-to-create-build-apk-file-for-android-from-ionic-project/230258/7
 
