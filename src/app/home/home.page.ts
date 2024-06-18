@@ -99,8 +99,8 @@ export class HomePage {
   2. https://inimatic.com/api?oper:getcid&params={first socket data}
   - Сохраняем в базу данных first socket data с ключем случайного GUID, время записи
   - в ответ отправляем guid записи
-  3. https://inimatic.com/api?oper:getзфкфьы&сшв=пгшв
-  - проверяем наличие зщаписи в БЗ, если прошло времени меньше заданного, возвращаем параметры  socket соединения. Иначе сообщение об ошибке: запись отсутствует, запись устарела соответствующими кодами.
+  3. https://inimatic.com/api?oper:getparams&cid=guid
+  - проверяем наличие запиши в БД, если прошло времени меньше заданного, возвращаем параметры  socket соединения. Иначе сообщение об ошибке: запись отсутствует, запись устарела соответствующими кодами.
   */
   ngAfterViewInit() {
     this.canvasElement = this.canvas?.nativeElement;
