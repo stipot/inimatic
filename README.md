@@ -39,6 +39,16 @@ and keep this --> sdk.dir=/path/sdk example [sdk.dir=/Users/admin/Library/Androi
 ## Setup Android build env
 https://forum.ionicframework.com/t/how-to-create-build-apk-file-for-android-from-ionic-project/230258/7
 
+
+# https://stackoverflow.com/questions/43480076/ionic-2-error-could-not-find-an-installed-version-of-gradle-either-in-android
+* Min SDK 33
+```
+export GRADLE_PATH="/home/teacher/.gradle/wrapper/dists/gradle-8.0.2-all/25ipb77ce0ypy3f9xdton1ae6/gradle-8.0.2/bin/"
+export ANDROID_HOME=/home/teacher/Android/Sdk
+export PATH=${PATH}:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:$GRADLE_PATH
+export PATH="$PATH:$GRADLE_PATH"
+```
+
 ## IONIC documentation
 [IONIC documentation](https://test-bc740.web.app/)
 
