@@ -75,6 +75,33 @@ export class HomePage {
 
   }
 
+  // Если инициатор.
+  /*
+  * После получения параметров розетка отправить их на сервер и получить идентификатор
+  * Отобразить QR https://inimatic.com?node=user&cid=____
+  * Ожидать подключения через розетку
+  * Варианты запросов через розетку:
+  * 1. type: "verify", content: img_base64
+  * Вместо QR показать img
+  * Ждать следующего запроса
+  * 2. type: "confirmed", content: "User name"
+  * Вместо картинки пишем: Добрый день, username! Жду указаний
+  * 3. type: "openURL", content: "url", cookie: data
+  * Если cookie - сохранить
+  * Открыть ссылку в именованном окне
+  * 4. type: "transferFile", content: data, type: type
+  * После получения data сохранить их на диск
+  */
+  /*
+  Я пишу сервер для установки socket соединения между двумя веб страницами.
+  * Напиши typescript сервер со следующим API
+  1. Подключение к базе данных
+  2. https://inimatic.com/api?oper:getcid&params={first socket data}
+  - Сохраняем в базу данных first socket data с ключем случайного GUID, время записи
+  - в ответ отправляем guid записи
+  3. https://inimatic.com/api?oper:getзфкфьы&сшв=пгшв
+  - проверяем наличие зщаписи в БЗ, если прошло времени меньше заданного, возвращаем параметры  socket соединения. Иначе сообщение об ошибке: запись отсутствует, запись устарела соответствующими кодами.
+  */
   ngAfterViewInit() {
     this.canvasElement = this.canvas?.nativeElement;
     this.canvasContext = this.canvasElement.getContext('2d');
