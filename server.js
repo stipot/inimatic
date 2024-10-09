@@ -55,4 +55,4 @@ const server = http.createServer(app);
 // Listen on provided port, on all network interfaces.
 server.on("error", onError);
 server.on("listening", onListening);
-server.listen(port, "0.0.0.0");
+server.listen(port, "0.0.0.0", () => console.log(`Started on http://localhost:${port} ...`));

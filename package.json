@@ -10,11 +10,13 @@
   "eslintConfig": {
     "extends": "@ionic/eslint-config/recommended"
   },
-  "prettier": "@ionic/prettier-config",
+  "prettier": {
+	"files": [".prettierrc"]
+  },
   "scripts": {
     "ng": "ng",
     "ionic.serve": "ionic serve",
-    "start": "ng serve",
+    "start": "ng serve --host 0.0.0.0",
     "build": "ng build",
     "buildlocal": "npx ng run app:build.local",
     "start:api": "nodemon server.js",
@@ -34,6 +36,7 @@
     "@angular/router": "^17.0.2",
     "@angular/service-worker": "^17.3.7",
     "@ionic/angular": "^8.0.0",
+    "@ionic/cli": "^7.2.0",
     "@ionic/cordova-builders": "^11.0.0",
     "angularx-qrcode": "^17.0.0",
     "axios": "^1.7.2",

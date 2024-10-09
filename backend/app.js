@@ -69,5 +69,6 @@ app.get('/api/getparams', (req, res) => {
 app.use((req, res) => {
   res.status(404).send('Resource not found');
 });
+app.use(express.static('public'))
 
 module.exports = app;
