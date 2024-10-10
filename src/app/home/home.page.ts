@@ -1,4 +1,10 @@
-import { Component, NgModule, ViewChild, ElementRef, AfterViewInit } from '@angular/core'
+import {
+	Component,
+	NgModule,
+	ViewChild,
+	ElementRef,
+	AfterViewInit,
+} from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms' // Make sure this import is included
 import { ToastController, LoadingController, Platform } from '@ionic/angular'
@@ -19,7 +25,8 @@ import {
 	IonCardTitle,
 } from '@ionic/angular/standalone'
 import { QRCodeModule } from 'angularx-qrcode'
-import * as SimplePeer from 'simple-peer'
+import SimplePeer from 'simple-peer'
+import { io, Socket } from 'socket.io-client'
 
 @Component({
 	selector: 'app-home',
@@ -55,16 +62,17 @@ export class HomePage implements AfterViewInit {
 
 	sessionID = '090988'
 	private peer: SimplePeer.Instance
-	outgoingSignal: string = ''
-	incomingSignal: string = 'tester'
+	outgoingSignal = ''
+	incomingSignal = 'tester'
 	isInitiator
+	socket: Socket
 
 	constructor(
 		private toastCtrl: ToastController,
 		private loadingCtrl: LoadingController,
 		private plt: Platform
 	) {
-		addIcons({ camera, refresh, close });
+		addIcons({ camera, refresh, close })
 		const isInStandaloneMode = () =>
 			'standalone' in window.navigator && window.navigator['standalone']
 
@@ -72,6 +80,8 @@ export class HomePage implements AfterViewInit {
 			console.log('I am a an iOS PWA!')
 			// E.g. hide the scan functionality!
 		}
+
+		this.socket = io('http://localhost:3000/')
 
 		this.isInitiator = location.hash === '#init'
 
@@ -92,11 +102,6 @@ export class HomePage implements AfterViewInit {
 
 		this.peer.on('data', (data: any) => {
 			console.log('Received message:', data.toString())
-		})
-
-		this.peer.on('signal', (data: SimplePeer.SignalData) => {
-			console.log('Signal data:', JSON.stringify(data))
-			this.outgoingSignal = JSON.stringify(data)
 		})
 
 		this.peer.on('error', (error: any) => {
@@ -192,7 +197,7 @@ export class HomePage implements AfterViewInit {
 
 	send() {
 		if (this.peer.connected) {
-			console.log(124);
+			console.log(124)
 
 			this.peer.send('Hello again!')
 		} else {

@@ -19,7 +19,8 @@
 			},
 			"extends": [
 				"plugin:@angular-eslint/recommended",
-				"plugin:@angular-eslint/template/process-inline-templates"
+				"plugin:@angular-eslint/template/process-inline-templates",
+				"prettier"
 			],
 			"rules": {
 				"@angular-eslint/component-class-suffix": [
@@ -45,6 +46,14 @@
 						"type": "attribute",
 						"prefix": "app",
 						"style": "camelCase"
+					}
+				],
+				"semi": 0,
+				"prettier/prettier": [
+					"error",
+					{
+						"endOfLine": "auto",
+						"semi": "never"
 					}
 				]
 			}
