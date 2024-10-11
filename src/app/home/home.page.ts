@@ -60,11 +60,14 @@ export class HomePage implements AfterViewInit {
 	scanResult: string | undefined = undefined
 	loading: HTMLIonLoadingElement | null = null
 
-	sessionID = '090988'
+	sessionID = ''
 	private peer: SimplePeer.Instance
 	outgoingSignal = ''
 	incomingSignal = 'tester'
 	isInitiator
+	initiatorSignalData = ''
+	followerSignalData = ''
+	message = ''
 	socket: Socket
 
 	constructor(
@@ -88,6 +91,7 @@ export class HomePage implements AfterViewInit {
 		// mobile device detection
 		// const regexp = new RegExp(/android|iphone|kindle|ipad/i)
 		// this.isInitiator = !regexp.test(navigator.userAgent)
+
 		console.log('Setting up peer, initiator:', this.isInitiator)
 		this.peer = new SimplePeer({
 			initiator: this.isInitiator,
@@ -98,6 +102,26 @@ export class HomePage implements AfterViewInit {
 			// This data needs to be sent to the other peer
 			console.log('outgoingSignal:', JSON.stringify(data))
 			this.outgoingSignal = JSON.stringify(data)
+			if (this.isInitiator) {
+				this.initiatorSignalData = JSON.stringify(data)
+				this.socket.emit('add_initiator', this.initiatorSignalData)
+			} else {
+				this.followerSignalData = JSON.stringify(data)
+				this.socket.emit(
+					'add_follower',
+					JSON.stringify({
+						follower: this.followerSignalData,
+						sessionId: this.sessionID,
+					})
+				)
+			}
+		})
+
+		this.peer.on('connect', () => {
+			console.log('CONNECT')
+			this.peer.send(
+				`i am ${this.isInitiator ? 'initiator' : 'follower'}`
+			)
 		})
 
 		this.peer.on('data', (data: any) => {
@@ -113,6 +137,18 @@ export class HomePage implements AfterViewInit {
 				console.log('ICE Candidate:', JSON.stringify(candidate))
 				// Send this candidate to the other peer
 			}
+		})
+
+		this.socket.on('session_id', (data) => (this.sessionID = data))
+
+		this.socket.on('follower_data', (data) => {
+			this.followerSignalData = data
+			this.peer.signal(this.followerSignalData)
+		})
+
+		this.socket.on('initiator_data', (data) => {
+			this.initiatorSignalData = data
+			this.peer.signal(this.initiatorSignalData)
 		})
 	}
 
@@ -195,11 +231,15 @@ export class HomePage implements AfterViewInit {
 		}
 	}
 
+	connectToSession() {
+		if (!this.isInitiator && this.sessionID) {
+			this.socket.emit('get_initiator', this.sessionID)
+		}
+	}
+
 	send() {
 		if (this.peer.connected) {
-			console.log(124)
-
-			this.peer.send('Hello again!')
+			this.peer.send(this.message)
 		} else {
 			console.log('Peer not connected.')
 			// Optionally, handle reconnection or display a message to the user

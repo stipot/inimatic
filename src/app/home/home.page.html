@@ -25,25 +25,14 @@
 			[width]="256"
 			[errorCorrectionLevel]="'M'"
 		></qrcode>
-		<div>
-			<label for="outgoing">Outgoing Signal Data:</label>
-			<textarea
-				id="outgoing"
-				[(ngModel)]="outgoingSignal"
-				readonly
-			></textarea>
-			<button (click)="copyToClipboard(outgoingSignal)">
-				Copy Signal Data
-			</button>
+		<div *ngIf="!isInitiator">
+			<input type="text" [(ngModel)]="sessionID" />
+			<button (click)="connectToSession()">Connect</button>
 		</div>
 		<div>
-			<label for="incoming">Incoming Signal Data:</label>
-			<textarea id="incoming" [(ngModel)]="incomingSignal"></textarea>
+			<input type="text" [(ngModel)]="message" />
+			<button (click)="send()">Send Message</button>
 		</div>
-		<button (click)="connect()" style="display: block">
-			Connect Using Incoming Data
-		</button>
-		<button (click)="send()" style="display: block">Send Message</button>
 	</div>
 	<!-- Fallback for iOS PWA -->
 	<input
@@ -53,7 +42,7 @@
 		hidden
 		(change)="handleFile($event)"
 	/>
-	<div  *ngIf="!isInitiator">
+	<div *ngIf="!isInitiator">
 		<!-- Trigger the file input -->
 		<ion-button expand="full" (click)="captureImage()">
 			<ion-icon slot="start" name="camera"></ion-icon>
