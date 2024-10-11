@@ -10,7 +10,7 @@ type FollowerData = {
 
 type SessionData = {
 	initiator: string
-	initiatorId: string
+	initiatorSocketId: string
 	follower: string
 	timestamp: Date
 }
@@ -30,29 +30,45 @@ const io = new Server(server, { cors: { origin: '*' } })
 
 const dataStore: Storage = {}
 
+function isValidGuid(guid: string) {
+	return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+		guid
+	)
+}
+
 io.on('connect', (socket) => {
-	socket.on('create_session', (initiatorData) => {
+	socket.on('add_initiator', (initiatorSignalingData) => {
 		const guid = uuidv4()
 		// save in redis in the future
 		dataStore[guid] = {
-			initiator: initiatorData,
-			initiatorId: socket.id,
+			initiator: initiatorSignalingData,
+			initiatorSocketId: socket.id,
 			follower: '',
 			timestamp: new Date(),
 		}
 		socket.emit('session_id', guid)
 	})
 
-	socket.on('connect_to_session', (followerData) => {
+	socket.on('get_initiator', (sessionId) => {
+		if (!isValidGuid(sessionId)) return
+
+		socket.emit('initiator_data', dataStore[sessionId].initiator)
+	})
+
+	socket.on('add_follower', (followerData) => {
 		const { follower, sessionId }: FollowerData = JSON.parse(followerData)
-		const guid = uuidv4()
+		if (!isValidGuid(sessionId)) return
 		// save in redis in the future
-		dataStore[guid] = { ...dataStore[guid], follower: follower }
-		io.to(dataStore[guid].initiatorId).emit('follower_data', follower)
-		socket.emit('initiator_data', dataStore[guid].initiator)
+		dataStore[sessionId] = { ...dataStore[sessionId], follower: follower }
+		io.to(dataStore[sessionId].initiatorSocketId).emit(
+			'follower_data',
+			follower
+		)
 	})
 })
 
-server.listen(3000, '0.0.0.0', () =>
-	console.log(`Started on http://localhost:${3000} ...`)
+const PORT = parseInt(process.env['PORT'] || '3000')
+const HOST = process.env['HOST'] || '0.0.0.0'
+server.listen(3000, HOST, () =>
+	console.log(`Started on http://localhost:${PORT} ...`)
 )
