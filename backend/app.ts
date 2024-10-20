@@ -2,6 +2,7 @@ import express from 'express'
 import http from 'http'
 import { v4 as uuidv4 } from 'uuid'
 import { Server } from 'socket.io'
+import { createClient } from 'redis'
 
 type FollowerData = {
 	follower: string
@@ -15,10 +16,6 @@ type SessionData = {
 	timestamp: Date
 }
 
-type Storage = {
-	[guid: string]: SessionData
-}
-
 const app = express()
 
 app.use((req, res) => {
@@ -28,7 +25,9 @@ app.use((req, res) => {
 const server = http.createServer(app)
 const io = new Server(server, { cors: { origin: '*' } })
 
-const dataStore: Storage = {}
+const redisClient = await createClient()
+	.on('error', (err) => console.log('Redis Client Error', err))
+	.connect()
 
 function isValidGuid(guid: string) {
 	return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
@@ -37,33 +36,38 @@ function isValidGuid(guid: string) {
 }
 
 io.on('connect', (socket) => {
-	socket.on('add_initiator', (initiatorSignalingData) => {
+	socket.on('add_initiator', async (initiatorSignalingData) => {
 		const guid = uuidv4()
-		// save in redis in the future
-		dataStore[guid] = {
+		const sessionData = {
 			initiator: initiatorSignalingData,
 			initiatorSocketId: socket.id,
 			follower: '',
 			timestamp: new Date(),
 		}
+		await redisClient.set(guid, JSON.stringify(sessionData))
+
 		socket.emit('session_id', guid)
 	})
 
-	socket.on('get_initiator', (sessionId) => {
+	socket.on('get_initiator', async (sessionId) => {
 		if (!isValidGuid(sessionId)) return
 
-		socket.emit('initiator_data', dataStore[sessionId].initiator)
+		const sessionData: SessionData = JSON.parse(
+			(await redisClient.get(sessionId))!
+		)
+		socket.emit('initiator_data', sessionData.initiator)
 	})
 
-	socket.on('add_follower', (followerData) => {
+	socket.on('add_follower', async (followerData) => {
 		const { follower, sessionId }: FollowerData = JSON.parse(followerData)
 		if (!isValidGuid(sessionId)) return
-		// save in redis in the future
-		dataStore[sessionId] = { ...dataStore[sessionId], follower: follower }
-		io.to(dataStore[sessionId].initiatorSocketId).emit(
-			'follower_data',
-			follower
-		)
+
+		const sessionData = JSON.parse((await redisClient.get(sessionId))!)
+		sessionData['follower'] = follower
+
+		await redisClient.set(sessionId, JSON.stringify(sessionData))
+
+		io.to(sessionData.initiatorSocketId).emit('follower_data', follower)
 	})
 })
 
