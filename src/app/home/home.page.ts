@@ -27,6 +27,7 @@ import {
 import { QRCodeModule } from 'angularx-qrcode'
 import SimplePeer from 'simple-peer'
 import { io, Socket } from 'socket.io-client'
+import { environment } from 'src/environments/environment'
 
 @Component({
 	selector: 'app-home',
@@ -84,7 +85,7 @@ export class HomePage implements AfterViewInit {
 			// E.g. hide the scan functionality!
 		}
 
-		this.socket = io('http://localhost:3000/')
+		this.socket = io(environment.app_server_url)
 
 		this.isInitiator = location.hash === '#init'
 
