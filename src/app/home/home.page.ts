@@ -8,7 +8,7 @@ import { close, camera } from 'ionicons/icons';
 
 import { IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonIcon, IonCard, IonCardContent, IonCardHeader, IonCardTitle } from '@ionic/angular/standalone'
 import { QRCodeModule } from 'angularx-qrcode'
-import * as SimplePeer from 'simple-peer';
+import SimplePeer from 'simple-peer';
 
 @Component({
   selector: 'app-home',
