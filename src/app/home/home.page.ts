@@ -60,7 +60,7 @@ export class HomePage implements AfterViewInit {
 	scanResult: string | undefined = undefined
 	loading: HTMLIonLoadingElement | null = null
 
-	sessionID = ''
+	sessionID = '0000000'
 	private peer: SimplePeer.Instance
 	outgoingSignal = ''
 	incomingSignal = 'tester'
