@@ -24,6 +24,12 @@ ionic cordova platform add electron
 ./functions npm run build
 npm install firebase-tools
 ```
+5. Setup [Redis on Windows](https://github.com/microsoftarchive/redis/releases), Redis on Ubuntu:
+```
+sudo apt update
+sudo apt install redis-server -y
+sudo systemctl enable --now redis-server
+```
 
 ## Setup build Android
 
