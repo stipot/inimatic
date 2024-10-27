@@ -4,8 +4,8 @@
 
 export const environment = {
 	production: false,
-	app_server_url: "http://localhost:3000/"
-};
+	app_server_url: 'http://localhost:3000/',
+}
 
 /*
  * For easier debugging in development mode, you can import the following file

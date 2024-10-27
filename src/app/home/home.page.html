@@ -11,38 +11,39 @@
 		</ion-toolbar>
 	</ion-header> -->
 
-	<div id="container">
-		<div *ngIf="isInitiator">
-			<strong>1. Open Inimatic application on your phone</strong>
-			<p>and point it to the screen</p>
+	<div id="initiator_container" *ngIf="isInitiator">
+		<div class="instruction" *ngIf="!isConnected()">
+			<div>
+				<strong>1. Open Inimatic application on your phone</strong>
+				<p>and point it to the screen</p>
+			</div>
+			<p>{{sessionID}}</p>
+			<qrcode
+				[qrdata]="sessionID"
+				[width]="256"
+				[errorCorrectionLevel]="'M'"
+			></qrcode>
 		</div>
-		<div *ngIf="! isInitiator">
-			<strong>Is not Initiator</strong>
-		</div>
-		<p>{{sessionID}}</p>
-		<qrcode
-			[qrdata]="sessionID"
-			[width]="256"
-			[errorCorrectionLevel]="'M'"
-		></qrcode>
-		<div *ngIf="!isInitiator">
-			<input type="text" [(ngModel)]="sessionID" />
-			<button (click)="connectToSession()">Connect</button>
-		</div>
+
+		<h3 *ngIf="isConnected()">Connected</h3>
+
 		<div>
 			<input type="text" [(ngModel)]="message" />
 			<button (click)="send()">Send Message</button>
 		</div>
+		<a href="/#follower" target="_blank">Follower page</a>
 	</div>
-	<!-- Fallback for iOS PWA -->
-	<input
-		#fileinput
-		type="file"
-		accept="image/*;capture=camera"
-		hidden
-		(change)="handleFile($event)"
-	/>
-	<div *ngIf="!isInitiator">
+
+	<div id="follower_container" *ngIf="!isInitiator">
+		<!-- Fallback for iOS PWA -->
+		<input
+			#fileinput
+			type="file"
+			accept="image/*;capture=camera"
+			hidden
+			(change)="handleFile($event)"
+		/>
+
 		<!-- Trigger the file input -->
 		<ion-button expand="full" (click)="captureImage()">
 			<ion-icon slot="start" name="camera"></ion-icon>
@@ -75,12 +76,28 @@
 			<ion-icon slot="start" name="close"></ion-icon>
 			Stop scan
 		</ion-button>
-	</div>
 
-	<ion-card *ngIf="scanResult">
-		<ion-card-header>
-			<ion-card-title>QR Code</ion-card-title>
-		</ion-card-header>
-		<ion-card-content> {{ scanResult }} </ion-card-content>
-	</ion-card>
+		<ion-card *ngIf="scanResult">
+			<ion-card-header>
+				<ion-card-title>QR Code</ion-card-title>
+			</ion-card-header>
+			<ion-card-content> {{ scanResult }} </ion-card-content>
+		</ion-card>
+
+		<div>
+			<input
+				type="text"
+				[(ngModel)]="sessionID"
+				placeholder="sessionID"
+			/>
+			<!-- <button (click)="connectToSession()" style="padding: 5px">
+				Connect
+			</button> -->
+		</div>
+
+		<div>
+			<input type="text" [(ngModel)]="message" />
+			<button (click)="send()">Send Message</button>
+		</div>
+	</div>
 </ion-content>

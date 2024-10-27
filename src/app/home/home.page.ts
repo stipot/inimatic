@@ -4,6 +4,7 @@ import {
 	ViewChild,
 	ElementRef,
 	AfterViewInit,
+	signal,
 } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms' // Make sure this import is included
@@ -65,7 +66,8 @@ export class HomePage implements AfterViewInit {
 	private peer: SimplePeer.Instance
 	outgoingSignal = ''
 	incomingSignal = 'tester'
-	isInitiator
+	isInitiator = true
+	isConnected = signal(false)
 	initiatorSignalData = ''
 	followerSignalData = ''
 	message = ''
@@ -87,7 +89,7 @@ export class HomePage implements AfterViewInit {
 
 		this.socket = io(environment.app_server_url)
 
-		this.isInitiator = location.hash === '#init'
+		this.isInitiator = location.hash !== '#follower'
 
 		// mobile device detection
 		// const regexp = new RegExp(/android|iphone|kindle|ipad/i)
@@ -119,6 +121,7 @@ export class HomePage implements AfterViewInit {
 		})
 
 		this.peer.on('connect', () => {
+			this.isConnected.set(true)
 			console.log('CONNECT')
 			this.peer.send(
 				`i am ${this.isInitiator ? 'initiator' : 'follower'}`
@@ -181,6 +184,8 @@ export class HomePage implements AfterViewInit {
 	- проверяем наличие запиши в БД, если прошло времени меньше заданного, возвращаем параметры  socket соединения. Иначе сообщение об ошибке: запись отсутствует, запись устарела соответствующими кодами.
 	*/
 	ngAfterViewInit() {
+		if (this.isInitiator) return
+
 		this.canvasElement = this.canvas?.nativeElement
 		this.canvasContext = this.canvasElement.getContext('2d')
 		this.videoElement = this.video?.nativeElement
@@ -188,6 +193,9 @@ export class HomePage implements AfterViewInit {
 
 	// Helper functions
 	async showQrToast() {
+		this.sessionID = this.scanResult!
+		this.connectToSession()
+
 		const toast = await this.toastCtrl.create({
 			message: `Open ${this.scanResult}?`,
 			position: 'top',
@@ -218,20 +226,6 @@ export class HomePage implements AfterViewInit {
 		this.videoElement.srcObject = null
 	}
 
-	connect() {
-		if (this.incomingSignal) {
-			console.log('Incoming signal data:', this.incomingSignal)
-			try {
-				const signal = JSON.parse(
-					this.incomingSignal
-				) as SimplePeer.SignalData
-				this.peer.signal(signal)
-			} catch (error) {
-				console.error('Error parsing incoming signal data:', error)
-			}
-		}
-	}
-
 	connectToSession() {
 		if (!this.isInitiator && this.sessionID) {
 			this.socket.emit('get_initiator', this.sessionID)
@@ -247,12 +241,6 @@ export class HomePage implements AfterViewInit {
 		}
 	}
 
-	copyToClipboard(data: string) {
-		navigator.clipboard.writeText(data).then(
-			() => console.log('Copying to clipboard was successful!', data),
-			(err) => console.error('Could not copy text: ', err)
-		)
-	}
 	async startScan() {
 		// Not working on iOS standalone mode!
 		const stream = await navigator.mediaDevices.getUserMedia({
@@ -333,7 +321,7 @@ export class HomePage implements AfterViewInit {
 
 		const file = input.files[0]
 
-		var img = new Image()
+		const img = new Image()
 		img.onload = () => {
 			this.canvasContext.drawImage(
 				img,
