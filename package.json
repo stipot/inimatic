@@ -23,6 +23,7 @@
 		"build": "ng build",
 		"buildlocal": "npx ng run app:build.local",
 		"start:api": "nodemon --exec node --no-warnings=ExperimentalWarning --loader ts-node/esm ./backend/app.ts",
+		"serve:api": "tsc -p ./backend/tsconfig.backend.json && PORT=3030 node ./dist/out-tsc/app.js",
 		"watch": "ng build --watch --configuration development",
 		"test": "ng test",
 		"lint": "ng lint"
