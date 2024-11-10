@@ -25,7 +25,8 @@ app.use((req, res) => {
 const server = http.createServer(app)
 const io = new Server(server, { cors: { origin: '*' } })
 
-const redisClient = await createClient()
+const url = `redis://${process.env['PRODUCTION'] ? 'redis' : 'localhost'}:6379`
+const redisClient = await createClient({ url })
 	.on('error', (err) => console.log('Redis Client Error', err))
 	.connect()
 
