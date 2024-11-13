@@ -13,7 +13,7 @@ services:
         entrypoint: /bin/sh
         env_file:
             - ./deployment/.env
-        command: -c 'test -d /etc/letsencrypt/live/${STAND:-dev99}.${BASE_DOMAIN:-example.ru} || certbot certonly --webroot -w /usr/share/nginx/html -d "${STAND:-dev99}.${BASE_DOMAIN:-example.ru},sub1.${STAND:-dev99}.${BASE_DOMAIN:-example.ru}" --rsa-key-size ${rsa_key_size:-2048} --agree-tos --force-renewal'
+        command: -c 'test -d /etc/letsencrypt/live/${STAND:-dev99}.${BASE_DOMAIN:-example.ru} || certbot certonly --webroot -w /usr/share/nginx/html -d "${STAND:-dev99}.${BASE_DOMAIN:-example.ru},sub1.${STAND:-dev99}.${BASE_DOMAIN:-example.ru}" --rsa-key-size ${rsa_key_size:-2048} --agree-tos --force-renewal  --register-unsafely-without-email'
         ports:
             - 80:80
         volumes:
