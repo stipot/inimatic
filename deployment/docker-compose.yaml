@@ -1,5 +1,4 @@
 # docker-compose.yaml
-version: "3"
 services:
     init-dhparams:
         image: docker.io/certbot/certbot
