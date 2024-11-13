@@ -72,7 +72,7 @@ io.on('connect', (socket) => {
 	})
 })
 
-const PORT = parseInt(process.env['PORT'] || '3000')
+const PORT = parseInt(process.env['PORT'] || '3030')
 const HOST = process.env['HOST'] || '0.0.0.0'
 server.listen(PORT, HOST, () =>
 	console.log(`Started on http://localhost:${PORT} ...`)
