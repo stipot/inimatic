@@ -1,1 +1,1 @@
-docker compose -f ./deployment/docker-compose.yml --project-directory ./ up
+docker compose -f ./deployment/docker-compose.yaml --project-directory ./ up
