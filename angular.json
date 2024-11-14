@@ -61,8 +61,8 @@
 								}
 							],
 							"optimization": {
-								"scripts": false,
-								"styles": false
+								"scripts": true,
+								"styles": true
 							},
 							"outputHashing": "all"
 						},
