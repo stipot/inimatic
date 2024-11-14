@@ -1,5 +1,26 @@
 # docker-compose.yaml
 services:
+    init-dhparams:
+        image: docker.io/certbot/certbot
+        restart: "no"
+        entrypoint: /bin/sh
+        command: -c 'test -f /etc/letsencrypt/ssl-dhparams.pem || openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 4096'
+        volumes:
+            - cert_volume:/etc/letsencrypt
+        deploy:
+            replicas: ${BUILD_SSL:+1}
+    certbot-oneshot:
+        image: docker.io/certbot/certbot
+        restart: "no"
+        entrypoint: /bin/sh
+        command: -c 'test -d /etc/letsencrypt/live/${BASE_DOMAIN:-example.ru} || certbot certonly --webroot -w /usr/share/nginx/html -d "${BASE_DOMAIN:-example.ru}" --rsa-key-size ${rsa_key_size:-2048} --agree-tos --force-renewal --register-unsafely-without-email'
+        ports:
+            - 80:80
+        volumes:
+            - cert_volume:/etc/letsencrypt
+            - acme_challenge:/usr/share/nginx/html
+        deploy:
+            replicas: ${BUILD_SSL:+1}
     frontend:
         depends_on:
             backend:
@@ -21,7 +42,7 @@ services:
             - cert_volume:/etc/letsencrypt:Z
             - acme_challenge:/usr/share/nginx/html/.well-known:Z
         configs:
-            - source: nginx-dev-server
+            - source: nginx-prod-server
               target: /etc/nginx/conf.d/default.conf
 
     backend:
@@ -47,7 +68,7 @@ volumes:
     acme_challenge: {}
 
 configs:
-    nginx-dev-server:
+    nginx-prod-server:
         content: |
             upstream backend {
               server backend:3030;
