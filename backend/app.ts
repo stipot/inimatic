@@ -46,6 +46,7 @@ io.on('connect', (socket) => {
 			timestamp: new Date(),
 		}
 		await redisClient.set(guid, JSON.stringify(sessionData))
+		await redisClient.expire(guid, 3600)
 
 		socket.emit('session_id', guid)
 	})
