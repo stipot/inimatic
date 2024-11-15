@@ -17,7 +17,7 @@ services:
             dockerfile: ./deployment/backend.Dockerfile
         restart: always
         ports:
-            - "3030"
+            - "3030:3030"
     frontend:
         depends_on:
             backend:
@@ -32,7 +32,7 @@ services:
         environment:
             - BUILD_SCRIPT=${BUILD_SCRIPT}
         ports:
-            - "80"
+            - "8080:8080"
         configs:
             - source: nginx-dev-server
               target: /etc/nginx/conf.d/default.conf
@@ -46,8 +46,11 @@ services:
             frontend:
                 condition: service_healthy
         volumes:
-            - ./etc/ssl:/etc/nginx/ssl
-            - ./etc/service.conf:/etc/nginx/service.conf
+            - ./deployment/etc/ssl:/etc/nginx/ssl
+            - type: bind
+              source: ./deployment/etc/service.conf
+              target: /etc/nginx/service.conf
+
         ports:
             - "80:80"
             - "443:443"
@@ -66,8 +69,8 @@ configs:
     nginx-dev-server:
         content: |
             server {
-              listen 80;
-              server_name ${BASE_DOMAIN:-127.0.0.2};
+              listen 8080;
+              server_name frontend;
               charset utf-8;
               client_max_body_size 10M;
               root /usr/share/nginx/html;
