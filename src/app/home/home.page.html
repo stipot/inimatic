@@ -25,64 +25,53 @@
 			></qrcode>
 		</div>
 
-		<h3 *ngIf="isConnected()">Connected</h3>
-
-		<div>
-			<input type="text" [(ngModel)]="message" />
-			<button (click)="send()">Send Message</button>
-		</div>
 		<a href="/#follower" target="_blank">Follower page</a>
 	</div>
 
 	<div id="follower_container" *ngIf="!isInitiator">
-		<!-- Fallback for iOS PWA -->
-		<input
-			#fileinput
-			type="file"
-			accept="image/*;capture=camera"
-			hidden
-			(change)="handleFile($event)"
-		/>
+		<div *ngIf="!isConnected()">
+			<!-- Fallback for iOS PWA -->
+			<input
+				#fileinput
+				type="file"
+				accept="image/*;capture=camera"
+				hidden
+				(change)="handleFile($event)"
+			/>
 
-		<!-- Trigger the file input -->
-		<ion-button expand="full" (click)="captureImage()">
-			<ion-icon slot="start" name="camera"></ion-icon>
-			Capture Image
-		</ion-button>
+			<!-- Trigger the file input -->
+			<ion-button expand="full" (click)="captureImage()">
+				<ion-icon slot="start" name="camera"></ion-icon>
+				Capture Image
+			</ion-button>
 
-		<ion-button expand="full" (click)="startScan()">
-			<ion-icon slot="start" name="qr-scanner"></ion-icon>
-			Start scan
-		</ion-button>
+			<ion-button expand="full" (click)="startScan()">
+				<ion-icon slot="start" name="qr-scanner"></ion-icon>
+				Start scan
+			</ion-button>
 
-		<ion-button
-			expand="full"
-			(click)="reset()"
-			color="warning"
-			*ngIf="scanResult"
-		>
-			<ion-icon slot="start" name="refresh"></ion-icon>
-			Reset
-		</ion-button>
+			<ion-button
+				expand="full"
+				(click)="reset()"
+				color="warning"
+				*ngIf="scanResult"
+			>
+				<ion-icon slot="start" name="refresh"></ion-icon>
+				Reset
+			</ion-button>
 
-		<!-- Shows our camera stream -->
-		<video #video width="30%"></video>
+			<!-- Shows our camera stream -->
+			<video #video width="30%"></video>
 
-		<!-- Used to render the camera stream images -->
-		<canvas #canvas></canvas>
+			<!-- Used to render the camera stream images -->
+			<canvas #canvas></canvas>
 
-		<!-- Stop our scanner preview if active -->
-		<ion-button expand="full" (click)="stopScan()" color="danger">
-			<ion-icon slot="start" name="close"></ion-icon>
-			Stop scan
-		</ion-button>
-
-		<ion-card *ngIf="scanResult">
-			<ion-card-header>
-				<ion-card-title>QR Code</ion-card-title>
-			</ion-card-header>
-			<ion-card-content> {{ scanResult }} </ion-card-content>
-		</ion-card>
+			<!-- Stop our scanner preview if active -->
+			<ion-button expand="full" (click)="stopScan()" color="danger">
+				<ion-icon slot="start" name="close"></ion-icon>
+				Stop scan
+			</ion-button>
+		</div>
 
 		<!-- <div>
 			<input
@@ -94,6 +83,18 @@
 				Connect
 			</button>
 		</div> -->
+	</div>
+
+	<div class="connected_stage" *ngIf="isConnected()">
+		<h2>Connected</h2>
+		<div class="transfer_file_form_wrapper">
+			<!-- <form class="transfer_file_form">
+				<input type="file" (change)="uploadFile($event)" />
+				<button type="submit" (click)="transferFile()">
+					Transfer file
+				</button>
+			</form> -->
+		</div>
 
 		<div>
 			<input type="text" [(ngModel)]="message" />

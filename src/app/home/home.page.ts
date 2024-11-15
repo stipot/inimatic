@@ -5,11 +5,12 @@ import {
 	ElementRef,
 	AfterViewInit,
 	signal,
+	ChangeDetectorRef,
 } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms' // Make sure this import is included
-import { ToastController, LoadingController, Platform } from '@ionic/angular'
-import jsQR, { QRCode } from 'jsqr-es6'
+import { LoadingController, Platform } from '@ionic/angular'
+import jsQR from 'jsqr-es6'
 import { addIcons } from 'ionicons'
 import { close, camera, refresh } from 'ionicons/icons'
 
@@ -45,10 +46,10 @@ import { environment } from 'src/environments/environment'
 		CommonModule,
 		IonButton,
 		IonIcon,
-		IonCard,
-		IonCardContent,
-		IonCardHeader,
-		IonCardTitle,
+		// IonCard,
+		// IonCardContent,
+		// IonCardHeader,
+		// IonCardTitle,
 	],
 })
 export class HomePage implements AfterViewInit {
@@ -74,9 +75,9 @@ export class HomePage implements AfterViewInit {
 	socket: Socket
 
 	constructor(
-		private toastCtrl: ToastController,
 		private loadingCtrl: LoadingController,
-		private plt: Platform
+		private plt: Platform,
+		private cdr: ChangeDetectorRef
 	) {
 		addIcons({ camera, refresh, close })
 		const isInStandaloneMode = () =>
@@ -123,9 +124,7 @@ export class HomePage implements AfterViewInit {
 		this.peer.on('connect', () => {
 			this.isConnected.set(true)
 			console.log('CONNECT')
-			this.peer.send(
-				`i am ${this.isInitiator ? 'initiator' : 'follower'}`
-			)
+			this.cdr.detectChanges()
 		})
 
 		this.peer.on('data', (data: any) => {
@@ -134,6 +133,7 @@ export class HomePage implements AfterViewInit {
 
 		this.peer.on('error', (error: any) => {
 			console.error('Peer connection error:', error)
+			this.isConnected.set(false)
 		})
 
 		this.peer.on('icecandidate', (candidate: any) => {
@@ -189,26 +189,6 @@ export class HomePage implements AfterViewInit {
 		this.canvasElement = this.canvas?.nativeElement
 		this.canvasContext = this.canvasElement.getContext('2d')
 		this.videoElement = this.video?.nativeElement
-	}
-
-	// Helper functions
-	async showQrToast() {
-		this.sessionID = this.scanResult!
-		this.connectToSession()
-
-		const toast = await this.toastCtrl.create({
-			message: `Open ${this.scanResult}?`,
-			position: 'top',
-			buttons: [
-				{
-					text: 'Open',
-					handler: () => {
-						window.open(this.scanResult, '_system', 'location=yes')
-					},
-				},
-			],
-		})
-		toast.present()
 	}
 
 	reset() {
@@ -299,7 +279,8 @@ export class HomePage implements AfterViewInit {
 			if (code) {
 				this.scanActive = false
 				this.scanResult = code.data
-				this.showQrToast()
+				this.sessionID = this.scanResult!
+				this.connectToSession()
 			} else {
 				if (this.scanActive) {
 					requestAnimationFrame(this.scan.bind(this))
@@ -347,9 +328,14 @@ export class HomePage implements AfterViewInit {
 
 			if (code) {
 				this.scanResult = code.data
-				this.showQrToast()
+				this.sessionID = this.scanResult!
+				this.connectToSession()
 			}
 		}
 		img.src = URL.createObjectURL(file)
 	}
+
+	uploadFile() {}
+
+	transferFile() {}
 }
