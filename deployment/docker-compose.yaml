@@ -1,5 +1,23 @@
 # docker-compose.yaml
 services:
+    redis:
+        image: redis:latest
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 1s
+            timeout: 3s
+            retries: 5
+        command: ["redis-server"]
+    backend:
+        depends_on:
+            redis:
+                condition: service_healthy
+        build:
+            context: .
+            dockerfile: ./deployment/backend.Dockerfile
+        restart: always
+        ports:
+            - "3030"
     frontend:
         depends_on:
             backend:
@@ -14,33 +32,31 @@ services:
         environment:
             - BUILD_SCRIPT=${BUILD_SCRIPT}
         ports:
-            - "80:80"
-            - "3000:3000"
-            - "443:443"
-        volumes:
-            - cert_volume:/etc/letsencrypt:Z
-            - acme_challenge:/usr/share/nginx/html/.well-known:Z
+            - "80"
         configs:
             - source: nginx-dev-server
               target: /etc/nginx/conf.d/default.conf
-
-    backend:
-        depends_on:
-            redis:
-                condition: service_healthy
-        build:
-            context: .
-            dockerfile: ./deployment/backend.Dockerfile
+    nginx:
+        build: .
+        image: umputun/nginx-le:latest
+        hostname: nginx
         restart: always
-
-    redis:
-        image: redis:latest
-        healthcheck:
-            test: ["CMD", "redis-cli", "ping"]
-            interval: 1s
-            timeout: 3s
-            retries: 5
-        command: ["redis-server"]
+        container_name: nginx
+        depends_on:
+            frontend:
+                condition: service_healthy
+        volumes:
+            - ./etc/ssl:/etc/nginx/ssl
+            - ./etc/service.conf:/etc/nginx/service.conf
+        ports:
+            - "80:80"
+            - "443:443"
+            - "3030:3000"
+        environment:
+            - TZ=Europe/Moscow
+            - LETSENCRYPT=true
+            - LE_EMAIL=connect@stipot.com
+            - LE_FQDN=inimatic.com
 
 volumes:
     cert_volume: {}
@@ -49,10 +65,6 @@ volumes:
 configs:
     nginx-dev-server:
         content: |
-            upstream backend {
-              server backend:3030;
-            }
-
             server {
               listen 80;
               server_name ${BASE_DOMAIN:-127.0.0.2};
@@ -60,11 +72,6 @@ configs:
               client_max_body_size 10M;
               root /usr/share/nginx/html;
               index index.html index.htm;
-
-              location /.well-known/acme-challenge/ {
-                root /usr/share/nginx/html;
-                allow all;
-              }
 
               location / {
                 try_files $$uri $$uri/ /index.html;
@@ -74,15 +81,4 @@ configs:
               location = /50x.html {
                 internal;
               }
-            }
-            server {
-                listen 3000;
-                server_name ${BASE_DOMAIN:-127.0.0.2};
-                location / {
-                    proxy_pass http://backend;
-                    proxy_set_header Host $$host;
-                    proxy_set_header X-Real-IP $$remote_addr;
-                    proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto $$scheme;
-                }
             }

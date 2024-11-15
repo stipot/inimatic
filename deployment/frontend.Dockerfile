@@ -6,4 +6,4 @@ RUN npm install
 RUN npm run ${BUILD_SCRIPT}
 FROM nginx:latest
 COPY --from=build /inimatic/www /usr/share/nginx/html
-EXPOSE 80 3000 443
+EXPOSE 80
