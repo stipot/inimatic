@@ -87,7 +87,7 @@ export class HomePage implements AfterViewInit {
 			// E.g. hide the scan functionality!
 		}
 
-		this.socket = io(environment.app_server_url)
+		this.socket = io(environment.app_server_url, { secure: true })
 
 		this.isInitiator = location.hash !== '#follower'
 
