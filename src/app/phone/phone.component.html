@@ -1,11 +1,12 @@
 <ion-header [translucent]="true">
 	<ion-toolbar>
 		<ion-title> INIMATIC |
-			<ion-button [routerLink]="['/follower']" *ngIf="isInitiator" size="small">Phone page</ion-button>
-			<ion-button routerLink="/home" *ngIf="!isInitiator" size="small">PC page</ion-button>
+			<ion-button routerLink="/#follower" *ngIf="isInitiator" size="small">Phone page</ion-button>
+			<ion-button routerLink="/" *ngIf="!isInitiator" size="small">PC page</ion-button>
 		</ion-title>
 	</ion-toolbar>
 </ion-header>
+
 
 <ion-content [fullscreen]="true">
 	<!-- <ion-header collapse="condense">

@@ -27,7 +27,7 @@
 }
 
 #follower_container {
-	background-color: white;
+	background-color: --ion-background-color;
 }
 
 .connected_stage {
@@ -41,7 +41,7 @@
 	flex-direction: column;
 	align-items: center;
 	gap: 40px;
-	background-color: white;
+	background-color: --ion-background-color;
 }
 
 .transfer_file_form {

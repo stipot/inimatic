@@ -32,9 +32,9 @@ import { io, Socket } from 'socket.io-client'
 import { environment } from 'src/environments/environment'
 
 @Component({
-	selector: 'app-home',
-	templateUrl: 'home.page.html',
-	styleUrls: ['home.page.scss'],
+	selector: 'app-phone',
+	templateUrl: './phone.component.html',
+	styleUrls: ['./phone.component.scss'],
 	standalone: true,
 	imports: [
 		IonHeader,
@@ -53,7 +53,7 @@ import { environment } from 'src/environments/environment'
 		// IonCardTitle,
 	],
 })
-export class HomePage implements AfterViewInit {
+export class PhoneComponent implements AfterViewInit {
 	@ViewChild('video', { static: false }) video?: ElementRef
 	@ViewChild('canvas', { static: false }) canvas?: ElementRef
 	@ViewChild('fileinput', { static: false }) fileinput?: ElementRef
@@ -74,12 +74,12 @@ export class HomePage implements AfterViewInit {
 	followerSignalData = ''
 	message = ''
 	socket: Socket
-
 	constructor(
 		private loadingCtrl: LoadingController,
 		private plt: Platform,
 		private cdr: ChangeDetectorRef
 	) {
+
 		addIcons({ camera, refresh, close })
 		const isInStandaloneMode = () =>
 			'standalone' in window.navigator && window.navigator['standalone']
@@ -157,33 +157,6 @@ export class HomePage implements AfterViewInit {
 		})
 	}
 
-	// Если инициатор.
-	/*
-	 * После получения параметров розетка отправить их на сервер и получить идентификатор
-	 * Отобразить QR https://inimatic.com?node=user&cid=____
-	 * Ожидать подключения через розетку
-	 * Варианты запросов через розетку:
-	 * 1. type: "verify", content: img_base64
-	 * Вместо QR показать img
-	 * Ждать следующего запроса
-	 * 2. type: "confirmed", content: "User name"
-	 * Вместо картинки пишем: Добрый день, username! Жду указаний
-	 * 3. type: "openURL", content: "url", cookie: data
-	 * Если cookie - сохранить
-	 * Открыть ссылку в именованном окне
-	 * 4. type: "transferFile", content: data, type: type
-	 * После получения data сохранить их на диск
-	 */
-	/*
-	Я пишу сервер для установки socket соединения между двумя веб страницами.
-	* Напиши typescript сервер со следующим API
-	1. Подключение к базе данных
-	2. https://inimatic.com/api?oper:getcid&params={first socket data}
-	- Сохраняем в базу данных first socket data с ключем случайного GUID, время записи
-	- в ответ отправляем guid записи
-	3. https://inimatic.com/api?oper:getparams&cid=guid
-	- проверяем наличие запиши в БД, если прошло времени меньше заданного, возвращаем параметры  socket соединения. Иначе сообщение об ошибке: запись отсутствует, запись устарела соответствующими кодами.
-	*/
 	ngAfterViewInit() {
 		if (this.isInitiator) return
 
