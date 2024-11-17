@@ -13,7 +13,6 @@ import { LoadingController, Platform } from '@ionic/angular'
 import jsQR from 'jsqr-es6'
 import { addIcons } from 'ionicons'
 import { close, camera, refresh } from 'ionicons/icons'
-
 import {
 	IonHeader,
 	IonToolbar,
@@ -21,15 +20,21 @@ import {
 	IonContent,
 	IonButton,
 	IonIcon,
-	IonCard,
-	IonCardContent,
-	IonCardHeader,
-	IonCardTitle,
 } from '@ionic/angular/standalone'
 import { QRCodeModule } from 'angularx-qrcode'
 import SimplePeer from 'simple-peer'
 import { io, Socket } from 'socket.io-client'
 import { environment } from 'src/environments/environment'
+import streamSaver from 'streamsaver'
+
+type Data = {
+	type: 'transferFile' | string
+	fileName: string
+	size: number
+	content?: Array<number>
+	part?: number
+	end?: boolean
+}
 
 @Component({
 	selector: 'app-home',
@@ -46,10 +51,6 @@ import { environment } from 'src/environments/environment'
 		CommonModule,
 		IonButton,
 		IonIcon,
-		// IonCard,
-		// IonCardContent,
-		// IonCardHeader,
-		// IonCardTitle,
 	],
 })
 export class HomePage implements AfterViewInit {
@@ -73,6 +74,10 @@ export class HomePage implements AfterViewInit {
 	followerSignalData = ''
 	message = ''
 	socket: Socket
+	file: File | null = null
+	writableStream: WritableStream | null = null
+	writer: WritableStreamDefaultWriter<any> | null = null
+	fileData: Data | null = null
 
 	constructor(
 		private loadingCtrl: LoadingController,
@@ -127,13 +132,34 @@ export class HomePage implements AfterViewInit {
 			this.cdr.detectChanges()
 		})
 
-		this.peer.on('data', (data: any) => {
-			console.log('Received message:', data.toString())
+		this.peer.on('data', async (data: any) => {
+			const recievedData = JSON.parse(data)
+			if (this.writableStream === null) {
+				this.writableStream = streamSaver.createWriteStream(
+					recievedData.fileName,
+					{
+						size: recievedData.size,
+					}
+				)
+				this.writer = this.writableStream.getWriter()
+				return
+			}
+
+			if (recievedData.end) {
+				console.log('end')
+				this.writer!.close()
+				this.writableStream = null
+				this.writer = null
+				return
+			}
+
+			this.writer!.write(new Uint8Array(recievedData.content))
 		})
 
 		this.peer.on('error', (error: any) => {
 			console.error('Peer connection error:', error)
 			this.isConnected.set(false)
+			cdr.detectChanges()
 		})
 
 		this.peer.on('icecandidate', (candidate: any) => {
@@ -335,7 +361,50 @@ export class HomePage implements AfterViewInit {
 		img.src = URL.createObjectURL(file)
 	}
 
-	uploadFile() {}
+	uploadFile(event: Event) {
+		const target = event.target as HTMLInputElement
+		if (!target.files || target.files.length === 0) return
+		this.file = target.files[0]
+	}
 
-	transferFile() {}
+	async transferFile() {
+		this.peer.send(
+			JSON.stringify({ fileName: this.file?.name, size: this.file?.size })
+		)
+
+		const chunksize = 64 * 1024
+		let offset = 0
+		while (offset < this.file!.size) {
+			const chunkfile = this.file!.slice(offset, offset + chunksize)
+			const chunk = await chunkfile.arrayBuffer()
+			await this.sendChunk(new Uint8Array(chunk))
+			offset += chunksize
+		}
+
+		this.peer.send(
+			JSON.stringify({
+				type: 'transferFile',
+				fileName: this.file!.name,
+				size: this.file!.size,
+				end: true,
+			})
+		)
+	}
+
+	async sendChunk(value: Uint8Array) {
+		console.log(this.peer.bufferSize, value.byteLength)
+
+		while (this.peer.bufferSize + value.byteLength > 1024 * 1024) {
+			await new Promise((resolve) => setTimeout(resolve, 50))
+		}
+
+		this.peer.send(
+			JSON.stringify({
+				type: 'transferFile',
+				fileName: this.file!.name,
+				size: this.file!.size,
+				content: Array.from(value),
+			})
+		)
+	}
 }

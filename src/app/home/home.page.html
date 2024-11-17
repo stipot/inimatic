@@ -23,9 +23,9 @@
 				[width]="256"
 				[errorCorrectionLevel]="'M'"
 			></qrcode>
-		</div>
 
-		<a href="/#follower" target="_blank">Follower page</a>
+			<a href="/#follower" target="_blank">Follower page</a>
+		</div>
 	</div>
 
 	<div id="follower_container" *ngIf="!isInitiator">
@@ -84,16 +84,15 @@
 			</button>
 		</div> -->
 	</div>
-
 	<div class="connected_stage" *ngIf="isConnected()">
 		<h2>Connected</h2>
 		<div class="transfer_file_form_wrapper">
-			<!-- <form class="transfer_file_form">
+			<form class="transfer_file_form">
 				<input type="file" (change)="uploadFile($event)" />
 				<button type="submit" (click)="transferFile()">
 					Transfer file
 				</button>
-			</form> -->
+			</form>
 		</div>
 
 		<div>
