@@ -1,12 +1,11 @@
 <ion-header [translucent]="true">
 	<ion-toolbar>
 		<ion-title> INIMATIC |
-			<ion-button routerLink="/#follower" *ngIf="isInitiator" size="small">Phone page</ion-button>
-			<ion-button routerLink="/" *ngIf="!isInitiator" size="small">PC page</ion-button>
+			<ion-button [routerLink]="['/follower']" *ngIf="isInitiator" size="small">Phone page</ion-button>
+			<ion-button routerLink="/home" *ngIf="!isInitiator" size="small">PC page</ion-button>
 		</ion-title>
 	</ion-toolbar>
 </ion-header>
-
 
 <ion-content [fullscreen]="true">
 	<!-- <ion-header collapse="condense">
@@ -71,16 +70,15 @@
 			</button>
 		</div> -->
 	</div>
-
 	<div class="connected_stage" *ngIf="isConnected()">
 		<h2>Connected</h2>
 		<div class="transfer_file_form_wrapper">
-			<!-- <form class="transfer_file_form">
+			<form class="transfer_file_form">
 				<input type="file" (change)="uploadFile($event)" />
 				<button type="submit" (click)="transferFile()">
 					Transfer file
 				</button>
-			</form> -->
+			</form>
 		</div>
 
 		<div>

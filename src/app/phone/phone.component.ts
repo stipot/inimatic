@@ -30,6 +30,16 @@ import { QRCodeModule } from 'angularx-qrcode'
 import SimplePeer from 'simple-peer'
 import { io, Socket } from 'socket.io-client'
 import { environment } from 'src/environments/environment'
+import streamSaver from 'streamsaver'
+
+type Data = {
+	type: 'transferFile' | string
+	fileName: string
+	size: number
+	content?: Array<number>
+	part?: number
+	end?: boolean
+}
 
 @Component({
 	selector: 'app-phone',
@@ -74,12 +84,15 @@ export class PhoneComponent implements AfterViewInit {
 	followerSignalData = ''
 	message = ''
 	socket: Socket
+	file: File | null = null
+	writableStream: WritableStream | null = null
+	writer: WritableStreamDefaultWriter<any> | null = null
+	fileData: Data | null = null
 	constructor(
 		private loadingCtrl: LoadingController,
 		private plt: Platform,
 		private cdr: ChangeDetectorRef
 	) {
-
 		addIcons({ camera, refresh, close })
 		const isInStandaloneMode = () =>
 			'standalone' in window.navigator && window.navigator['standalone']
@@ -128,13 +141,34 @@ export class PhoneComponent implements AfterViewInit {
 			this.cdr.detectChanges()
 		})
 
-		this.peer.on('data', (data: any) => {
-			console.log('Received message:', data.toString())
+		this.peer.on('data', async (data: any) => {
+			const recievedData = JSON.parse(data)
+			if (this.writableStream === null) {
+				this.writableStream = streamSaver.createWriteStream(
+					recievedData.fileName,
+					{
+						size: recievedData.size,
+					}
+				)
+				this.writer = this.writableStream.getWriter()
+				return
+			}
+
+			if (recievedData.end) {
+				console.log('end')
+				this.writer!.close()
+				this.writableStream = null
+				this.writer = null
+				return
+			}
+
+			this.writer!.write(new Uint8Array(recievedData.content))
 		})
 
 		this.peer.on('error', (error: any) => {
 			console.error('Peer connection error:', error)
 			this.isConnected.set(false)
+			cdr.detectChanges()
 		})
 
 		this.peer.on('icecandidate', (candidate: any) => {
@@ -157,6 +191,33 @@ export class PhoneComponent implements AfterViewInit {
 		})
 	}
 
+	// Если инициатор.
+	/*
+	 * После получения параметров розетка отправить их на сервер и получить идентификатор
+	 * Отобразить QR https://inimatic.com?node=user&cid=____
+	 * Ожидать подключения через розетку
+	 * Варианты запросов через розетку:
+	 * 1. type: "verify", content: img_base64
+	 * Вместо QR показать img
+	 * Ждать следующего запроса
+	 * 2. type: "confirmed", content: "User name"
+	 * Вместо картинки пишем: Добрый день, username! Жду указаний
+	 * 3. type: "openURL", content: "url", cookie: data
+	 * Если cookie - сохранить
+	 * Открыть ссылку в именованном окне
+	 * 4. type: "transferFile", content: data, type: type
+	 * После получения data сохранить их на диск
+	 */
+	/*
+	Я пишу сервер для установки socket соединения между двумя веб страницами.
+	* Напиши typescript сервер со следующим API
+	1. Подключение к базе данных
+	2. https://inimatic.com/api?oper:getcid&params={first socket data}
+	- Сохраняем в базу данных first socket data с ключем случайного GUID, время записи
+	- в ответ отправляем guid записи
+	3. https://inimatic.com/api?oper:getparams&cid=guid
+	- проверяем наличие запиши в БД, если прошло времени меньше заданного, возвращаем параметры  socket соединения. Иначе сообщение об ошибке: запись отсутствует, запись устарела соответствующими кодами.
+	*/
 	ngAfterViewInit() {
 		if (this.isInitiator) return
 
@@ -309,7 +370,50 @@ export class PhoneComponent implements AfterViewInit {
 		img.src = URL.createObjectURL(file)
 	}
 
-	uploadFile() { }
+	uploadFile(event: Event) {
+		const target = event.target as HTMLInputElement
+		if (!target.files || target.files.length === 0) return
+		this.file = target.files[0]
+	}
 
-	transferFile() { }
+	async transferFile() {
+		this.peer.send(
+			JSON.stringify({ fileName: this.file?.name, size: this.file?.size })
+		)
+
+		const chunksize = 64 * 1024
+		let offset = 0
+		while (offset < this.file!.size) {
+			const chunkfile = this.file!.slice(offset, offset + chunksize)
+			const chunk = await chunkfile.arrayBuffer()
+			await this.sendChunk(new Uint8Array(chunk))
+			offset += chunksize
+		}
+
+		this.peer.send(
+			JSON.stringify({
+				type: 'transferFile',
+				fileName: this.file!.name,
+				size: this.file!.size,
+				end: true,
+			})
+		)
+	}
+
+	async sendChunk(value: Uint8Array) {
+		console.log(this.peer.bufferSize, value.byteLength)
+
+		while (this.peer.bufferSize + value.byteLength > 1024 * 1024) {
+			await new Promise((resolve) => setTimeout(resolve, 50))
+		}
+
+		this.peer.send(
+			JSON.stringify({
+				type: 'transferFile',
+				fileName: this.file!.name,
+				size: this.file!.size,
+				content: Array.from(value),
+			})
+		)
+	}
 }
