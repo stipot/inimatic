@@ -1,8 +1,16 @@
 <ion-header [translucent]="true">
 	<ion-toolbar>
-		<ion-title> INIMATIC |
-			<ion-button [routerLink]="['/follower']" *ngIf="isInitiator" size="small">Phone page</ion-button>
-			<ion-button routerLink="/home" *ngIf="!isInitiator" size="small">PC page</ion-button>
+		<ion-title>
+			INIMATIC |
+			<ion-button
+				[routerLink]="['/follower']"
+				*ngIf="isInitiator"
+				size="small"
+				>Phone page</ion-button
+			>
+			<ion-button routerLink="/home" *ngIf="!isInitiator" size="small"
+				>PC page</ion-button
+			>
 		</ion-title>
 	</ion-toolbar>
 </ion-header>
@@ -14,21 +22,16 @@
 		</ion-toolbar>
 	</ion-header> -->
 
-	<div id="initiator_container" *ngIf="isInitiator">
-		<div class="instruction" *ngIf="!isConnected()">
-			<div>
-				<strong>1. Open Inimatic application on your phone</strong>
-				<p>and point it to the screen</p>
-			</div>
-			<p>{{sessionID}}</p>
-			<qrcode [qrdata]="sessionID" [width]="256" [errorCorrectionLevel]="'M'" *ngIf="sessionID!='-'"></qrcode>
-		</div>
-	</div>
-
 	<div id="follower_container" *ngIf="!isInitiator">
 		<div *ngIf="!isConnected()">
 			<!-- Fallback for iOS PWA -->
-			<input #fileinput type="file" accept="image/*;capture=camera" hidden (change)="handleFile($event)" />
+			<input
+				#fileinput
+				type="file"
+				accept="image/*;capture=camera"
+				hidden
+				(change)="handleFile($event)"
+			/>
 
 			<!-- Trigger the file input -->
 			<ion-button expand="full" (click)="captureImage()">
@@ -41,7 +44,12 @@
 				Start scan
 			</ion-button>
 
-			<ion-button expand="full" (click)="reset()" color="warning" *ngIf="scanResult">
+			<ion-button
+				expand="full"
+				(click)="reset()"
+				color="warning"
+				*ngIf="scanResult"
+			>
 				<ion-icon slot="start" name="refresh"></ion-icon>
 				Reset
 			</ion-button>

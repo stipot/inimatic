@@ -1,41 +1,23 @@
-import {
-	Component,
-	NgModule,
-	ViewChild,
-	ElementRef,
-	AfterViewInit,
-	signal,
-	ChangeDetectorRef,
-} from '@angular/core'
+import { Component, signal, ChangeDetectorRef } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms' // Make sure this import is included
 import { LoadingController, Platform } from '@ionic/angular'
-import jsQR from 'jsqr-es6'
 import { addIcons } from 'ionicons'
-import { close, camera, refresh } from 'ionicons/icons'
-import { RouterLinkWithHref } from '@angular/router';
+import { close, camera, refresh, closeOutline } from 'ionicons/icons'
+import { RouterLinkWithHref } from '@angular/router'
 import {
 	IonHeader,
 	IonToolbar,
 	IonTitle,
 	IonContent,
 	IonButton,
-	IonIcon,
 } from '@ionic/angular/standalone'
 import { QRCodeModule } from 'angularx-qrcode'
 import SimplePeer from 'simple-peer'
 import { io, Socket } from 'socket.io-client'
 import { environment } from 'src/environments/environment'
 import streamSaver from 'streamsaver'
-
-type Data = {
-	type: 'transferFile' | string
-	fileName: string
-	size: number
-	content?: Array<number>
-	part?: number
-	end?: boolean
-}
+import { Data, TransferFileData, SendMessageData } from 'src/types'
 
 @Component({
 	selector: 'app-home',
@@ -51,24 +33,12 @@ type Data = {
 		FormsModule,
 		CommonModule,
 		IonButton,
-		IonIcon,
 		RouterLinkWithHref,
 	],
 })
-export class HomePage implements AfterViewInit {
-	@ViewChild('video', { static: false }) video?: ElementRef
-	@ViewChild('canvas', { static: false }) canvas?: ElementRef
-	@ViewChild('fileinput', { static: false }) fileinput?: ElementRef
-	canvasElement: any
-	videoElement: any
-	canvasContext: any
-	scanActive = false
-	scanResult: string | undefined = undefined
-	loading: HTMLIonLoadingElement | null = null
-
+export class HomePage {
 	sessionID = '-'
 	private peer: SimplePeer.Instance
-	outgoingSignal = ''
 	incomingSignal = 'tester'
 	isInitiator = true
 	isConnected = signal(false)
@@ -81,11 +51,7 @@ export class HomePage implements AfterViewInit {
 	writer: WritableStreamDefaultWriter<any> | null = null
 	fileData: Data | null = null
 
-	constructor(
-		private loadingCtrl: LoadingController,
-		private plt: Platform,
-		private cdr: ChangeDetectorRef
-	) {
+	constructor(private plt: Platform, private cdr: ChangeDetectorRef) {
 		addIcons({ camera, refresh, close })
 		const isInStandaloneMode = () =>
 			'standalone' in window.navigator && window.navigator['standalone']
@@ -111,8 +77,7 @@ export class HomePage implements AfterViewInit {
 
 		this.peer.on('signal', (data: SimplePeer.SignalData) => {
 			// This data needs to be sent to the other peer
-			console.log('outgoingSignal:', JSON.stringify(data))
-			this.outgoingSignal = JSON.stringify(data)
+			console.log('peer signal data:', JSON.stringify(data))
 			if (this.isInitiator) {
 				this.initiatorSignalData = JSON.stringify(data)
 				this.socket.emit('add_initiator', this.initiatorSignalData)
@@ -135,27 +100,13 @@ export class HomePage implements AfterViewInit {
 		})
 
 		this.peer.on('data', async (data: any) => {
-			const recievedData = JSON.parse(data)
-			if (this.writableStream === null) {
-				this.writableStream = streamSaver.createWriteStream(
-					recievedData.fileName,
-					{
-						size: recievedData.size,
-					}
-				)
-				this.writer = this.writableStream.getWriter()
-				return
-			}
+			const recievedData: Data = JSON.parse(data)
 
-			if (recievedData.end) {
-				console.log('end')
-				this.writer!.close()
-				this.writableStream = null
-				this.writer = null
-				return
+			if (recievedData.type === 'transferFile') {
+				this.recieveFile(recievedData)
+			} else if (recievedData.type === 'sendMessage') {
+				this.recieveMessage(recievedData)
 			}
-
-			this.writer!.write(new Uint8Array(recievedData.content))
 		})
 
 		this.peer.on('error', (error: any) => {
@@ -211,28 +162,6 @@ export class HomePage implements AfterViewInit {
 	3. https://inimatic.com/api?oper:getparams&cid=guid
 	- проверяем наличие запиши в БД, если прошло времени меньше заданного, возвращаем параметры  socket соединения. Иначе сообщение об ошибке: запись отсутствует, запись устарела соответствующими кодами.
 	*/
-	ngAfterViewInit() {
-		if (this.isInitiator) return
-
-		this.canvasElement = this.canvas?.nativeElement
-		this.canvasContext = this.canvasElement.getContext('2d')
-		this.videoElement = this.video?.nativeElement
-	}
-
-	reset() {
-		this.scanResult = undefined
-	}
-
-	stopScan() {
-		this.scanActive = false
-		const stream = this.videoElement.srcObject
-		const tracks = stream.getTracks()
-		tracks.forEach(function (track: any) {
-			track.stop()
-		})
-
-		this.videoElement.srcObject = null
-	}
 
 	connectToSession() {
 		if (!this.isInitiator && this.sessionID) {
@@ -242,125 +171,13 @@ export class HomePage implements AfterViewInit {
 
 	send() {
 		if (this.peer.connected) {
-			this.peer.send(this.message)
+			this.peer.send(
+				JSON.stringify({ type: 'sendMessage', message: this.message })
+			)
 		} else {
 			console.log('Peer not connected.')
 			// Optionally, handle reconnection or display a message to the user
 		}
-	}
-
-	async startScan() {
-		// Not working on iOS standalone mode!
-		const stream = await navigator.mediaDevices.getUserMedia({
-			video: { facingMode: 'environment' },
-		})
-		this.videoElement.srcObject = stream
-		// Required for Safari
-		console.log(this.videoElement)
-		this.videoElement.setAttribute('playsinline', true)
-
-		this.loading = await this.loadingCtrl.create({})
-		await this.loading.present()
-
-		this.videoElement.play()
-		requestAnimationFrame(this.scan.bind(this))
-	}
-
-	async scan() {
-		// console.log("Scan started", this.videoElement.readyState, this.videoElement.HAVE_ENOUGH_DATA, this.videoElement)
-		if (
-			this.videoElement.readyState === this.videoElement.HAVE_ENOUGH_DATA
-		) {
-			// console.log(this.loading)
-			if (this.loading) {
-				await this.loading.dismiss()
-				this.loading = null
-				this.scanActive = true
-				// console.log(this.scanActive)
-			}
-
-			this.canvasElement.height = this.videoElement.videoHeight
-			this.canvasElement.width = this.videoElement.videoWidth
-
-			this.canvasContext.drawImage(
-				this.videoElement,
-				0,
-				0,
-				this.canvasElement.width,
-				this.canvasElement.height
-			)
-			const imageData = this.canvasContext.getImageData(
-				0,
-				0,
-				this.canvasElement.width,
-				this.canvasElement.height
-			)
-			const code = jsQR(
-				imageData.data,
-				imageData.width,
-				imageData.height,
-				{
-					inversionAttempts: 'dontInvert',
-				}
-			)
-
-			if (code) {
-				this.scanActive = false
-				this.scanResult = code.data
-				this.sessionID = this.scanResult!
-				this.connectToSession()
-			} else {
-				if (this.scanActive) {
-					requestAnimationFrame(this.scan.bind(this))
-				}
-			}
-		} else {
-			requestAnimationFrame(this.scan.bind(this))
-		}
-	}
-	captureImage() {
-		this.fileinput?.nativeElement.click()
-	}
-
-	handleFile(event: Event) {
-		const input = event.target as HTMLInputElement
-		if (!input.files?.length) {
-			return
-		}
-
-		const file = input.files[0]
-
-		const img = new Image()
-		img.onload = () => {
-			this.canvasContext.drawImage(
-				img,
-				0,
-				0,
-				this.canvasElement.width,
-				this.canvasElement.height
-			)
-			const imageData = this.canvasContext.getImageData(
-				0,
-				0,
-				this.canvasElement.width,
-				this.canvasElement.height
-			)
-			const code = jsQR(
-				imageData.data,
-				imageData.width,
-				imageData.height,
-				{
-					inversionAttempts: 'dontInvert',
-				}
-			)
-
-			if (code) {
-				this.scanResult = code.data
-				this.sessionID = this.scanResult!
-				this.connectToSession()
-			}
-		}
-		img.src = URL.createObjectURL(file)
 	}
 
 	uploadFile(event: Event) {
@@ -371,7 +188,11 @@ export class HomePage implements AfterViewInit {
 
 	async transferFile() {
 		this.peer.send(
-			JSON.stringify({ fileName: this.file?.name, size: this.file?.size })
+			JSON.stringify({
+				type: 'transferFile',
+				fileName: this.file?.name,
+				size: this.file?.size,
+			})
 		)
 
 		const chunksize = 64 * 1024
@@ -394,8 +215,6 @@ export class HomePage implements AfterViewInit {
 	}
 
 	async sendChunk(value: Uint8Array) {
-		console.log(this.peer.bufferSize, value.byteLength)
-
 		while (this.peer.bufferSize + value.byteLength > 1024 * 1024) {
 			await new Promise((resolve) => setTimeout(resolve, 50))
 		}
@@ -408,5 +227,32 @@ export class HomePage implements AfterViewInit {
 				content: Array.from(value),
 			})
 		)
+	}
+
+	recieveFile(recievedData: TransferFileData) {
+		if (this.writableStream === null) {
+			this.writableStream = streamSaver.createWriteStream(
+				recievedData.fileName,
+				{
+					size: recievedData.size,
+				}
+			)
+			this.writer = this.writableStream.getWriter()
+			return
+		}
+
+		if (recievedData.end) {
+			console.log('end')
+			this.writer!.close()
+			this.writableStream = null
+			this.writer = null
+			return
+		}
+
+		this.writer!.write(new Uint8Array(recievedData.content!))
+	}
+
+	recieveMessage(recievedData: SendMessageData) {
+		console.log(recievedData.message)
 	}
 }

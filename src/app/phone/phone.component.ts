@@ -1,6 +1,5 @@
 import {
 	Component,
-	NgModule,
 	ViewChild,
 	ElementRef,
 	AfterViewInit,
@@ -13,7 +12,7 @@ import { LoadingController, Platform } from '@ionic/angular'
 import jsQR from 'jsqr-es6'
 import { addIcons } from 'ionicons'
 import { close, camera, refresh } from 'ionicons/icons'
-import { RouterLinkWithHref } from '@angular/router';
+import { RouterLinkWithHref } from '@angular/router'
 import {
 	IonHeader,
 	IonToolbar,
@@ -21,25 +20,13 @@ import {
 	IonContent,
 	IonButton,
 	IonIcon,
-	IonCard,
-	IonCardContent,
-	IonCardHeader,
-	IonCardTitle,
 } from '@ionic/angular/standalone'
 import { QRCodeModule } from 'angularx-qrcode'
 import SimplePeer from 'simple-peer'
 import { io, Socket } from 'socket.io-client'
 import { environment } from 'src/environments/environment'
 import streamSaver from 'streamsaver'
-
-type Data = {
-	type: 'transferFile' | string
-	fileName: string
-	size: number
-	content?: Array<number>
-	part?: number
-	end?: boolean
-}
+import { Data, TransferFileData, VerifyData, SendMessageData } from 'src/types'
 
 @Component({
 	selector: 'app-phone',
@@ -57,10 +44,6 @@ type Data = {
 		IonButton,
 		IonIcon,
 		RouterLinkWithHref,
-		// IonCard,
-		// IonCardContent,
-		// IonCardHeader,
-		// IonCardTitle,
 	],
 })
 export class PhoneComponent implements AfterViewInit {
@@ -142,27 +125,12 @@ export class PhoneComponent implements AfterViewInit {
 		})
 
 		this.peer.on('data', async (data: any) => {
-			const recievedData = JSON.parse(data)
-			if (this.writableStream === null) {
-				this.writableStream = streamSaver.createWriteStream(
-					recievedData.fileName,
-					{
-						size: recievedData.size,
-					}
-				)
-				this.writer = this.writableStream.getWriter()
-				return
+			const recievedData: Data = JSON.parse(data)
+			if (recievedData.type === 'transferFile') {
+				this.recieveFile(recievedData)
+			} else if (recievedData.type === 'sendMessage') {
+				this.recieveMessage(recievedData)
 			}
-
-			if (recievedData.end) {
-				console.log('end')
-				this.writer!.close()
-				this.writableStream = null
-				this.writer = null
-				return
-			}
-
-			this.writer!.write(new Uint8Array(recievedData.content))
 		})
 
 		this.peer.on('error', (error: any) => {
@@ -249,7 +217,9 @@ export class PhoneComponent implements AfterViewInit {
 
 	send() {
 		if (this.peer.connected) {
-			this.peer.send(this.message)
+			this.peer.send(
+				JSON.stringify({ type: 'sendMessage', message: this.message })
+			)
 		} else {
 			console.log('Peer not connected.')
 			// Optionally, handle reconnection or display a message to the user
@@ -378,7 +348,11 @@ export class PhoneComponent implements AfterViewInit {
 
 	async transferFile() {
 		this.peer.send(
-			JSON.stringify({ fileName: this.file?.name, size: this.file?.size })
+			JSON.stringify({
+				type: 'transferFile',
+				fileName: this.file?.name,
+				size: this.file?.size,
+			})
 		)
 
 		const chunksize = 64 * 1024
@@ -401,8 +375,6 @@ export class PhoneComponent implements AfterViewInit {
 	}
 
 	async sendChunk(value: Uint8Array) {
-		console.log(this.peer.bufferSize, value.byteLength)
-
 		while (this.peer.bufferSize + value.byteLength > 1024 * 1024) {
 			await new Promise((resolve) => setTimeout(resolve, 50))
 		}
@@ -415,5 +387,32 @@ export class PhoneComponent implements AfterViewInit {
 				content: Array.from(value),
 			})
 		)
+	}
+
+	recieveFile(recievedData: TransferFileData) {
+		if (this.writableStream === null) {
+			this.writableStream = streamSaver.createWriteStream(
+				recievedData.fileName,
+				{
+					size: recievedData.size,
+				}
+			)
+			this.writer = this.writableStream.getWriter()
+			return
+		}
+
+		if (recievedData.end) {
+			console.log('end')
+			this.writer!.close()
+			this.writableStream = null
+			this.writer = null
+			return
+		}
+
+		this.writer!.write(new Uint8Array(recievedData.content!))
+	}
+
+	recieveMessage(recievedData: SendMessageData) {
+		console.log(recievedData.message)
 	}
 }

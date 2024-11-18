@@ -1,0 +1,20 @@
+export type TransferFileData = {
+	type: 'transferFile'
+	fileName: string
+	size: number
+	content?: Array<number>
+	part?: number
+	end?: boolean
+}
+
+export type SendMessageData = {
+	type: 'sendMessage'
+	message: string
+}
+
+export type VerifyData = {
+	type: 'verify'
+	content: string
+}
+
+export type Data = TransferFileData | SendMessageData | VerifyData
