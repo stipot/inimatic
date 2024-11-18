@@ -71,6 +71,7 @@ export class PhoneComponent implements AfterViewInit {
 	writableStream: WritableStream | null = null
 	writer: WritableStreamDefaultWriter<any> | null = null
 	fileData: Data | null = null
+	messagesLog: string[] = []
 	constructor(
 		private loadingCtrl: LoadingController,
 		private plt: Platform,
@@ -122,14 +123,15 @@ export class PhoneComponent implements AfterViewInit {
 			this.isConnected.set(true)
 			console.log('CONNECT')
 			this.cdr.detectChanges()
+			this.stopScan()
 		})
 
 		this.peer.on('data', async (data: any) => {
-			const recievedData: Data = JSON.parse(data)
-			if (recievedData.type === 'transferFile') {
-				this.recieveFile(recievedData)
-			} else if (recievedData.type === 'sendMessage') {
-				this.recieveMessage(recievedData)
+			const receivedData: Data = JSON.parse(data)
+			if (receivedData.type === 'transferFile') {
+				this.receiveFile(receivedData)
+			} else if (receivedData.type === 'sendMessage') {
+				this.receiveMessage(receivedData)
 			}
 		})
 
@@ -389,19 +391,19 @@ export class PhoneComponent implements AfterViewInit {
 		)
 	}
 
-	recieveFile(recievedData: TransferFileData) {
+	receiveFile(receivedData: TransferFileData) {
 		if (this.writableStream === null) {
 			this.writableStream = streamSaver.createWriteStream(
-				recievedData.fileName,
+				receivedData.fileName,
 				{
-					size: recievedData.size,
+					size: receivedData.size,
 				}
 			)
 			this.writer = this.writableStream.getWriter()
 			return
 		}
 
-		if (recievedData.end) {
+		if (receivedData.end) {
 			console.log('end')
 			this.writer!.close()
 			this.writableStream = null
@@ -409,10 +411,11 @@ export class PhoneComponent implements AfterViewInit {
 			return
 		}
 
-		this.writer!.write(new Uint8Array(recievedData.content!))
+		this.writer!.write(new Uint8Array(receivedData.content!))
 	}
 
-	recieveMessage(recievedData: SendMessageData) {
-		console.log(recievedData.message)
+	receiveMessage(receivedData: SendMessageData) {
+		console.log(receivedData.message)
+		this.messagesLog = this.messagesLog.concat([receivedData.message])
 	}
 }

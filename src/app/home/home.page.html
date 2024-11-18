@@ -2,26 +2,13 @@
 	<ion-toolbar>
 		<ion-title>
 			INIMATIC |
-			<ion-button
-				[routerLink]="['/follower']"
-				*ngIf="isInitiator"
-				size="small"
-				>Phone page</ion-button
-			>
-			<ion-button routerLink="/home" *ngIf="!isInitiator" size="small"
-				>PC page</ion-button
-			>
+			<ion-button [routerLink]="['/follower']" *ngIf="isInitiator" size="small">Phone page</ion-button>
+			<ion-button routerLink="/home" *ngIf="!isInitiator" size="small">PC page</ion-button>
 		</ion-title>
 	</ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-	<!-- <ion-header collapse="condense">
-		<ion-toolbar>
-			<ion-title size="large">Blank</ion-title>
-		</ion-toolbar>
-	</ion-header> -->
-
 	<div id="initiator_container" *ngIf="isInitiator">
 		<div class="instruction" *ngIf="!isConnected()">
 			<div>
@@ -29,40 +16,28 @@
 				<p>and point it to the screen</p>
 			</div>
 			<p>{{sessionID}}</p>
-			<qrcode
-				[qrdata]="sessionID"
-				[width]="256"
-				[errorCorrectionLevel]="'M'"
-				*ngIf="sessionID!='-'"
-			></qrcode>
+			<qrcode [qrdata]="sessionID" [width]="256" [errorCorrectionLevel]="'M'" *ngIf="sessionID!='-'"></qrcode>
 		</div>
 	</div>
-
-	<!-- <div>
-			<input
-				type="text"
-				[(ngModel)]="sessionID"
-				placeholder="sessionID"
-			/>
-			<button (click)="connectToSession()" style="padding: 5px">
-				Connect
-			</button>
-		</div> -->
 
 	<div class="connected_stage" *ngIf="isConnected()">
 		<h2>Connected</h2>
 		<div class="transfer_file_form_wrapper">
 			<form class="transfer_file_form">
 				<input type="file" (change)="uploadFile($event)" />
-				<button type="submit" (click)="transferFile()">
+				<ion-button type="submit" (click)="transferFile()">
 					Transfer file
-				</button>
+				</ion-button>
 			</form>
 		</div>
 
 		<div>
-			<input type="text" [(ngModel)]="message" />
-			<button (click)="send()">Send Message</button>
+			<input type="text" [(ngModel)]="message" placeholder="Enter message to send" />
+			<ion-button (click)="send()">Send Message</ion-button>
+		</div>
+		<div>
+			<p *ngIf="messagesLog.length > 0">Messages:</p>
+			<p *ngFor="let messageL of messagesLog">{{messageL}}</p>
 		</div>
 	</div>
 </ion-content>
