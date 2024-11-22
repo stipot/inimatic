@@ -16,7 +16,12 @@
 				<p>and point it to the screen</p>
 			</div>
 			<p>{{sessionID}}</p>
-			<qrcode [qrdata]="sessionID" [width]="256" [errorCorrectionLevel]="'M'" *ngIf="sessionID!='-'"></qrcode>
+			@if (verificationStep) {
+				<img [src]="verificationImage" alt="verification image" [width]="256">
+			} @else {
+				<qrcode [qrdata]="sessionID" [width]="256" [errorCorrectionLevel]="'M'" *ngIf="sessionID!='-'"></qrcode>
+			}
+
 		</div>
 	</div>
 

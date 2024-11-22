@@ -17,7 +17,13 @@ import SimplePeer from 'simple-peer'
 import { io, Socket } from 'socket.io-client'
 import { environment } from 'src/environments/environment'
 import streamSaver from 'streamsaver'
-import { Data, TransferFileData, SendMessageData } from 'src/types'
+import {
+	Data,
+	TransferFileData,
+	SendMessageData,
+	VerifyData,
+	ConfirmationData,
+} from 'src/types'
 
 @Component({
 	selector: 'app-home',
@@ -41,11 +47,13 @@ export class HomePage {
 	private peer: SimplePeer.Instance
 	incomingSignal = 'tester'
 	isInitiator = true
+	verificationStep = false
 	isConnected = signal(false)
 	initiatorSignalData = ''
 	followerSignalData = ''
 	message = ''
 	socket: Socket
+	verificationImage = ''
 	file: File | null = null
 	writableStream: WritableStream | null = null
 	writer: WritableStreamDefaultWriter<any> | null = null
@@ -94,9 +102,7 @@ export class HomePage {
 		})
 
 		this.peer.on('connect', () => {
-			this.isConnected.set(true)
-			console.log('CONNECT')
-			this.cdr.detectChanges()
+			this.showConnectedStage()
 		})
 
 		this.peer.on('data', async (data: any) => {
@@ -106,6 +112,10 @@ export class HomePage {
 				this.receiveFile(receivedData)
 			} else if (receivedData.type === 'sendMessage') {
 				this.receiveMessage(receivedData)
+			} else if (receivedData.type === 'verify') {
+				this.receiveVerificationImage(receivedData)
+			} else if (receivedData.type === 'confirmation') {
+				this.receiveConfirmationData(receivedData)
 			}
 		})
 
@@ -167,6 +177,12 @@ export class HomePage {
 		if (!this.isInitiator && this.sessionID) {
 			this.socket.emit('get_initiator', this.sessionID)
 		}
+	}
+
+	showConnectedStage() {
+		this.isConnected.set(true)
+		console.log('CONNECT')
+		this.cdr.detectChanges()
 	}
 
 	send() {
@@ -255,5 +271,17 @@ export class HomePage {
 	receiveMessage(receivedData: SendMessageData) {
 		console.log(receivedData.message)
 		this.messagesLog = this.messagesLog.concat([receivedData.message])
+	}
+
+	receiveVerificationImage(receivedData: VerifyData) {
+		this.verificationStep = true
+		this.verificationImage = receivedData.content
+		this.cdr.detectChanges()
+	}
+
+	receiveConfirmationData(receivedData: ConfirmationData) {
+		if (receivedData.confirmed) {
+			this.showConnectedStage()
+		}
 	}
 }

@@ -120,13 +120,11 @@ export class PhoneComponent implements AfterViewInit {
 		})
 
 		this.peer.on('connect', () => {
-			this.isConnected.set(true)
-			console.log('CONNECT')
-			this.cdr.detectChanges()
+			this.showConnectedStage()
 			this.stopScan()
 		})
 
-		this.peer.on('data', async (data: any) => {
+		this.peer.on('data', (data: any) => {
 			const receivedData: Data = JSON.parse(data)
 			if (receivedData.type === 'transferFile') {
 				this.receiveFile(receivedData)
@@ -215,6 +213,12 @@ export class PhoneComponent implements AfterViewInit {
 		if (!this.isInitiator && this.sessionID) {
 			this.socket.emit('get_initiator', this.sessionID)
 		}
+	}
+
+	showConnectedStage() {
+		this.isConnected.set(true)
+		console.log('CONNECT')
+		this.cdr.detectChanges()
 	}
 
 	send() {
@@ -417,5 +421,25 @@ export class PhoneComponent implements AfterViewInit {
 	receiveMessage(receivedData: SendMessageData) {
 		console.log(receivedData.message)
 		this.messagesLog = this.messagesLog.concat([receivedData.message])
+	}
+
+	convertImageToBase64() {
+		return new Promise((resolve) => {
+			let canvas = document.createElement('canvas')
+			let img = document.createElement('img')
+			img.src = 'assets/images/stub.png'
+			img.onload = () => {
+				canvas.height = img.height
+				canvas.width = img.width
+				let ctx = canvas.getContext('2d')
+				ctx!.drawImage(img, 0, 0)
+				resolve(canvas.toDataURL('image/png'))
+			}
+		})
+	}
+
+	async sendVerificationImage() {
+		const imageURL = await this.convertImageToBase64()
+		this.peer.send(JSON.stringify({ type: 'verify', content: imageURL }))
 	}
 }
