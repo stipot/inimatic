@@ -125,13 +125,6 @@ export class HomePage {
 			cdr.detectChanges()
 		})
 
-		this.peer.on('icecandidate', (candidate: any) => {
-			if (candidate) {
-				console.log('ICE Candidate:', JSON.stringify(candidate))
-				// Send this candidate to the other peer
-			}
-		})
-
 		this.socket.on('session_id', (data) => (this.sessionID = data))
 
 		this.socket.on('follower_data', (data) => {
