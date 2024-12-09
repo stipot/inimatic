@@ -214,7 +214,7 @@ export class PhoneComponent implements AfterViewInit {
 		this.videoElement.setAttribute('playsinline', true)
 
 		this.videoElement.play()
-		this.animationRequest = requestAnimationFrame(this.scan)
+		this.animationRequest = requestAnimationFrame(this.scan.bind(this))
 	}
 
 	async scan() {
