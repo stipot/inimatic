@@ -8,7 +8,7 @@ import {
 } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms' // Make sure this import is included
-import { LoadingController, Platform } from '@ionic/angular'
+import { Platform } from '@ionic/angular'
 import jsQR from 'jsqr-es6'
 import { addIcons } from 'ionicons'
 import { close, camera, refresh } from 'ionicons/icons'
@@ -55,7 +55,7 @@ export class PhoneComponent implements AfterViewInit {
 	canvasContext: any
 	scanActive = false
 	scanResult: string | undefined = undefined
-	loading: HTMLIonLoadingElement | null = null
+	animationRequest = 0
 
 	sessionID = '-'
 	private peer: SimplePeer.Instance
@@ -72,11 +72,7 @@ export class PhoneComponent implements AfterViewInit {
 	writer: WritableStreamDefaultWriter<any> | null = null
 	fileData: Data | null = null
 	messagesLog: string[] = []
-	constructor(
-		private loadingCtrl: LoadingController,
-		private plt: Platform,
-		private cdr: ChangeDetectorRef
-	) {
+	constructor(private plt: Platform, private cdr: ChangeDetectorRef) {
 		addIcons({ camera, refresh, close })
 		const isInStandaloneMode = () =>
 			'standalone' in window.navigator && window.navigator['standalone']
@@ -170,6 +166,7 @@ export class PhoneComponent implements AfterViewInit {
 	}
 
 	stopScan() {
+		cancelAnimationFrame(this.animationRequest)
 		this.scanActive = false
 		const stream = this.videoElement.srcObject
 		const tracks = stream.getTracks()
@@ -204,6 +201,9 @@ export class PhoneComponent implements AfterViewInit {
 	}
 
 	async startScan() {
+		if (this.scanActive) {
+			this.stopScan()
+		}
 		// Not working on iOS standalone mode!
 		const stream = await navigator.mediaDevices.getUserMedia({
 			video: { facingMode: 'environment' },
@@ -213,11 +213,8 @@ export class PhoneComponent implements AfterViewInit {
 		console.log(this.videoElement)
 		this.videoElement.setAttribute('playsinline', true)
 
-		this.loading = await this.loadingCtrl.create({})
-		await this.loading.present()
-
 		this.videoElement.play()
-		requestAnimationFrame(this.scan.bind(this))
+		this.animationRequest = requestAnimationFrame(this.scan)
 	}
 
 	async scan() {
@@ -225,13 +222,7 @@ export class PhoneComponent implements AfterViewInit {
 		if (
 			this.videoElement.readyState === this.videoElement.HAVE_ENOUGH_DATA
 		) {
-			// console.log(this.loading)
-			if (this.loading) {
-				await this.loading.dismiss()
-				this.loading = null
-				this.scanActive = true
-				// console.log(this.scanActive)
-			}
+			this.scanActive = true
 
 			this.canvasElement.height = this.videoElement.videoHeight
 			this.canvasElement.width = this.videoElement.videoWidth
@@ -266,11 +257,13 @@ export class PhoneComponent implements AfterViewInit {
 				this.connectToSession()
 			} else {
 				if (this.scanActive) {
-					requestAnimationFrame(this.scan.bind(this))
+					this.animationRequest = requestAnimationFrame(
+						this.scan.bind(this)
+					)
 				}
 			}
 		} else {
-			requestAnimationFrame(this.scan.bind(this))
+			this.animationRequest = requestAnimationFrame(this.scan.bind(this))
 		}
 	}
 	captureImage() {
