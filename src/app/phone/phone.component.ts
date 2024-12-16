@@ -126,8 +126,7 @@ export class PhoneComponent implements AfterViewInit {
 		})
 
 		this.peer.on('data', (data: any) => {
-			const receivedData: Data = JSON.parse(data)
-			this.receiveData(receivedData)
+			this.receiveData(data)
 		})
 
 		this.peer.on('error', (error: any) => {
