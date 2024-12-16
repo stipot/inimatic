@@ -27,3 +27,5 @@ export type Data =
 	| SendMessageData
 	| VerifyData
 	| ConfirmationData
+
+export type ConnectionType = 'WebRTC' | 'WebSocket' | null

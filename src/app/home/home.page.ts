@@ -1,7 +1,7 @@
 import { Component, signal, ChangeDetectorRef } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms' // Make sure this import is included
-import { LoadingController, Platform } from '@ionic/angular'
+import { Platform } from '@ionic/angular'
 import { addIcons } from 'ionicons'
 import { close, camera, refresh, closeOutline } from 'ionicons/icons'
 import { RouterLinkWithHref } from '@angular/router'
@@ -23,6 +23,7 @@ import {
 	SendMessageData,
 	VerifyData,
 	ConfirmationData,
+	ConnectionType,
 } from 'src/types'
 
 @Component({
@@ -48,7 +49,7 @@ export class HomePage {
 	incomingSignal = 'tester'
 	isInitiator = true
 	verificationStep = false
-	isConnected = signal(false)
+	isConnected: ConnectionType = null
 	initiatorSignalData = ''
 	followerSignalData = ''
 	message = ''
@@ -102,26 +103,19 @@ export class HomePage {
 		})
 
 		this.peer.on('connect', () => {
-			this.showConnectedStage()
+			this.showConnectedStage('WebRTC')
 		})
 
 		this.peer.on('data', async (data: any) => {
-			const receivedData: Data = JSON.parse(data)
-
-			if (receivedData.type === 'transferFile') {
-				this.receiveFile(receivedData)
-			} else if (receivedData.type === 'sendMessage') {
-				this.receiveMessage(receivedData)
-			} else if (receivedData.type === 'verify') {
-				this.receiveVerificationImage(receivedData)
-			} else if (receivedData.type === 'confirmation') {
-				this.receiveConfirmationData(receivedData)
-			}
+			this.receiveData(data)
 		})
 
 		this.peer.on('error', (error: any) => {
 			console.error('Peer connection error:', error)
-			this.isConnected.set(false)
+			if (!this.isConnected) {
+				return this.connectViaWebSocket()
+			}
+			this.isConnected = null
 			cdr.detectChanges()
 		})
 
@@ -135,6 +129,21 @@ export class HomePage {
 		this.socket.on('initiator_data', (data) => {
 			this.initiatorSignalData = data
 			this.peer.signal(this.initiatorSignalData)
+		})
+
+		this.socket.on('disconnection_notification', () => {
+			if (this.isConnected === 'WebSocket') {
+				this.isConnected = null
+				this.cdr.detectChanges()
+			}
+		})
+
+		this.socket.on('connection', (data) => {
+			if (data === 'connect') {
+				return this.showConnectedStage('WebSocket')
+			}
+
+			this.receiveData(data)
 		})
 	}
 
@@ -166,27 +175,53 @@ export class HomePage {
 	- проверяем наличие запиши в БД, если прошло времени меньше заданного, возвращаем параметры  socket соединения. Иначе сообщение об ошибке: запись отсутствует, запись устарела соответствующими кодами.
 	*/
 
+	send(data: any) {
+		if (!this.isConnected) {
+			console.log('Peer not connected.')
+			return
+		}
+
+		if (this.isConnected === 'WebRTC') {
+			this.peer.send(data)
+		} else {
+			this.socket.emit(
+				'conductor',
+				JSON.stringify({
+					sessionId: this.sessionID,
+					isInitiator: this.isInitiator,
+					data: data,
+				})
+			)
+		}
+	}
+
 	connectToSession() {
 		if (!this.isInitiator && this.sessionID) {
 			this.socket.emit('get_initiator', this.sessionID)
 		}
 	}
 
-	showConnectedStage() {
-		this.isConnected.set(true)
+	connectViaWebSocket() {
+		this.socket.emit(
+			'conductor',
+			JSON.stringify({
+				sessionId: this.sessionID,
+				isInitiator: this.isInitiator,
+				data: 'connect',
+			})
+		)
+	}
+
+	showConnectedStage(connectionType: ConnectionType) {
+		this.isConnected = connectionType
 		console.log('CONNECT')
 		this.cdr.detectChanges()
 	}
 
-	send() {
-		if (this.peer.connected) {
-			this.peer.send(
-				JSON.stringify({ type: 'sendMessage', message: this.message })
-			)
-		} else {
-			console.log('Peer not connected.')
-			// Optionally, handle reconnection or display a message to the user
-		}
+	sendMessage() {
+		this.send(
+			JSON.stringify({ type: 'sendMessage', message: this.message })
+		)
 	}
 
 	uploadFile(event: Event) {
@@ -196,7 +231,7 @@ export class HomePage {
 	}
 
 	async transferFile() {
-		this.peer.send(
+		this.send(
 			JSON.stringify({
 				type: 'transferFile',
 				fileName: this.file?.name,
@@ -213,7 +248,7 @@ export class HomePage {
 			offset += chunksize
 		}
 
-		this.peer.send(
+		this.send(
 			JSON.stringify({
 				type: 'transferFile',
 				fileName: this.file!.name,
@@ -228,7 +263,7 @@ export class HomePage {
 			await new Promise((resolve) => setTimeout(resolve, 50))
 		}
 
-		this.peer.send(
+		this.send(
 			JSON.stringify({
 				type: 'transferFile',
 				fileName: this.file!.name,
@@ -236,6 +271,20 @@ export class HomePage {
 				content: Array.from(value),
 			})
 		)
+	}
+
+	receiveData(data: any) {
+		const receivedData: Data = JSON.parse(data)
+
+		if (receivedData.type === 'transferFile') {
+			this.receiveFile(receivedData)
+		} else if (receivedData.type === 'sendMessage') {
+			this.receiveMessage(receivedData)
+		} else if (receivedData.type === 'verify') {
+			this.receiveVerificationImage(receivedData)
+		} else if (receivedData.type === 'confirmation') {
+			this.receiveConfirmationData(receivedData)
+		}
 	}
 
 	receiveFile(receivedData: TransferFileData) {
@@ -274,7 +323,7 @@ export class HomePage {
 
 	receiveConfirmationData(receivedData: ConfirmationData) {
 		if (receivedData.confirmed) {
-			this.showConnectedStage()
+			this.showConnectedStage(this.isConnected)
 		}
 	}
 }

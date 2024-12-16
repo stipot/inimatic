@@ -10,7 +10,7 @@
 
 <ion-content [fullscreen]="true">
 	<div id="initiator_container" *ngIf="isInitiator">
-		<div class="instruction" *ngIf="!isConnected()">
+		<div class="instruction" *ngIf="!isConnected">
 			<div>
 				<strong>1. Open Inimatic application on your phone</strong>
 				<p>and point it to the screen</p>
@@ -25,8 +25,12 @@
 		</div>
 	</div>
 
-	<div class="connected_stage" *ngIf="isConnected()">
-		<h2>Connected</h2>
+	<div class="connected_stage" *ngIf="isConnected">
+		<div>
+			<h2>Connected</h2>
+			<p *ngIf="isConnected === 'WebSocket'" class="hint">connection via webrtc failed, connected via WebSocket</p>
+		</div>
+
 		<div class="transfer_file_form_wrapper">
 			<form class="transfer_file_form">
 				<input type="file" (change)="uploadFile($event)" />
@@ -38,7 +42,7 @@
 
 		<div>
 			<input type="text" [(ngModel)]="message" placeholder="Enter message to send" />
-			<ion-button (click)="send()">Send Message</ion-button>
+			<ion-button (click)="sendMessage()">Send Message</ion-button>
 		</div>
 		<div>
 			<p *ngIf="messagesLog.length > 0">Messages:</p>

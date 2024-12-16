@@ -1,6 +1,5 @@
 #initiator_container {
 	text-align: center;
-
 	position: absolute;
 	left: 0;
 	right: 0;
@@ -13,12 +12,11 @@
 	line-height: 26px;
 }
 
-#initiator_container p {
+#initiator_container p,
+.hint {
 	font-size: 16px;
 	line-height: 22px;
-
 	color: #8c8c8c;
-
 	margin: 0;
 }
 

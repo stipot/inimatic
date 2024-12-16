@@ -3,7 +3,6 @@ import {
 	ViewChild,
 	ElementRef,
 	AfterViewInit,
-	signal,
 	ChangeDetectorRef,
 } from '@angular/core'
 import { CommonModule } from '@angular/common'
@@ -11,7 +10,7 @@ import { FormsModule } from '@angular/forms' // Make sure this import is include
 import { Platform } from '@ionic/angular'
 import jsQR from 'jsqr-es6'
 import { addIcons } from 'ionicons'
-import { close, camera, refresh } from 'ionicons/icons'
+import { close, camera, refresh, image } from 'ionicons/icons'
 import { RouterLinkWithHref } from '@angular/router'
 import {
 	IonHeader,
@@ -26,7 +25,13 @@ import SimplePeer from 'simple-peer'
 import { io, Socket } from 'socket.io-client'
 import { environment } from 'src/environments/environment'
 import streamSaver from 'streamsaver'
-import { Data, TransferFileData, VerifyData, SendMessageData } from 'src/types'
+import {
+	Data,
+	TransferFileData,
+	VerifyData,
+	SendMessageData,
+	ConnectionType,
+} from 'src/types'
 
 @Component({
 	selector: 'app-phone',
@@ -62,7 +67,7 @@ export class PhoneComponent implements AfterViewInit {
 	outgoingSignal = ''
 	incomingSignal = 'tester'
 	isInitiator = true
-	isConnected = signal(false)
+	isConnected: ConnectionType = null
 	initiatorSignalData = ''
 	followerSignalData = ''
 	message = ''
@@ -73,7 +78,7 @@ export class PhoneComponent implements AfterViewInit {
 	fileData: Data | null = null
 	messagesLog: string[] = []
 	constructor(private plt: Platform, private cdr: ChangeDetectorRef) {
-		addIcons({ camera, refresh, close })
+		addIcons({ image, camera, refresh, close })
 		const isInStandaloneMode = () =>
 			'standalone' in window.navigator && window.navigator['standalone']
 
@@ -117,21 +122,20 @@ export class PhoneComponent implements AfterViewInit {
 
 		this.peer.on('connect', () => {
 			this.reset()
-			this.showConnectedStage()
+			this.showConnectedStage('WebRTC')
 		})
 
 		this.peer.on('data', (data: any) => {
 			const receivedData: Data = JSON.parse(data)
-			if (receivedData.type === 'transferFile') {
-				this.receiveFile(receivedData)
-			} else if (receivedData.type === 'sendMessage') {
-				this.receiveMessage(receivedData)
-			}
+			this.receiveData(receivedData)
 		})
 
 		this.peer.on('error', (error: any) => {
 			console.error('Peer connection error:', error)
-			this.isConnected.set(false)
+			if (!this.isConnected) {
+				return this.connectViaWebSocket()
+			}
+			this.isConnected = null
 			cdr.detectChanges()
 			this.initVideoElements()
 		})
@@ -147,6 +151,52 @@ export class PhoneComponent implements AfterViewInit {
 			this.initiatorSignalData = data
 			this.peer.signal(this.initiatorSignalData)
 		})
+
+		this.socket.on('disconnection_notification', () => {
+			if (this.isConnected === 'WebSocket') {
+				this.isConnected = null
+				this.cdr.detectChanges()
+			}
+		})
+
+		this.socket.on('connection', (data) => {
+			if (data === 'connect') {
+				return this.showConnectedStage('WebSocket')
+			}
+
+			this.receiveData(data)
+		})
+	}
+
+	connectViaWebSocket() {
+		this.socket.emit(
+			'conductor',
+			JSON.stringify({
+				sessionId: this.sessionID,
+				isInitiator: this.isInitiator,
+				data: 'connect',
+			})
+		)
+	}
+
+	send(data: any) {
+		if (!this.isConnected) {
+			console.log('Peer not connected.')
+			return
+		}
+
+		if (this.isConnected === 'WebRTC') {
+			this.peer.send(data)
+		} else {
+			this.socket.emit(
+				'conductor',
+				JSON.stringify({
+					sessionId: this.sessionID,
+					isInitiator: this.isInitiator,
+					data: data,
+				})
+			)
+		}
 	}
 
 	ngAfterViewInit() {
@@ -183,21 +233,16 @@ export class PhoneComponent implements AfterViewInit {
 		}
 	}
 
-	showConnectedStage() {
-		this.isConnected.set(true)
-		console.log('CONNECT')
+	showConnectedStage(connectionType: ConnectionType) {
+		this.isConnected = connectionType
+		console.log('CONNECT', connectionType)
 		this.cdr.detectChanges()
 	}
 
-	send() {
-		if (this.peer.connected) {
-			this.peer.send(
-				JSON.stringify({ type: 'sendMessage', message: this.message })
-			)
-		} else {
-			console.log('Peer not connected.')
-			// Optionally, handle reconnection or display a message to the user
-		}
+	sendMessage() {
+		this.send(
+			JSON.stringify({ type: 'sendMessage', message: this.message })
+		)
 	}
 
 	async startScan() {
@@ -266,6 +311,7 @@ export class PhoneComponent implements AfterViewInit {
 			this.animationRequest = requestAnimationFrame(this.scan.bind(this))
 		}
 	}
+
 	captureImage() {
 		this.fileinput?.nativeElement.click()
 	}
@@ -318,7 +364,7 @@ export class PhoneComponent implements AfterViewInit {
 	}
 
 	async transferFile() {
-		this.peer.send(
+		this.send(
 			JSON.stringify({
 				type: 'transferFile',
 				fileName: this.file?.name,
@@ -335,7 +381,7 @@ export class PhoneComponent implements AfterViewInit {
 			offset += chunksize
 		}
 
-		this.peer.send(
+		this.send(
 			JSON.stringify({
 				type: 'transferFile',
 				fileName: this.file!.name,
@@ -350,7 +396,7 @@ export class PhoneComponent implements AfterViewInit {
 			await new Promise((resolve) => setTimeout(resolve, 50))
 		}
 
-		this.peer.send(
+		this.send(
 			JSON.stringify({
 				type: 'transferFile',
 				fileName: this.file!.name,
@@ -358,6 +404,15 @@ export class PhoneComponent implements AfterViewInit {
 				content: Array.from(value),
 			})
 		)
+	}
+
+	receiveData(data: any) {
+		const receivedData: Data = JSON.parse(data)
+		if (receivedData.type === 'transferFile') {
+			this.receiveFile(receivedData)
+		} else if (receivedData.type === 'sendMessage') {
+			this.receiveMessage(receivedData)
+		}
 	}
 
 	receiveFile(receivedData: TransferFileData) {
