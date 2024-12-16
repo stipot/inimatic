@@ -12,8 +12,15 @@ type FollowerData = {
 type SessionData = {
 	initiator: string
 	initiatorSocketId: string
+	followerSocketId: string
 	follower: string
 	timestamp: Date
+}
+
+type CommunicationData = {
+	isInitiator: boolean
+	sessionId: string
+	data: string
 }
 
 const app = express()
@@ -42,6 +49,7 @@ io.on('connect', (socket) => {
 		const sessionData = {
 			initiator: initiatorSignalingData,
 			initiatorSocketId: socket.id,
+			followerSocketId: '',
 			follower: '',
 			timestamp: new Date(),
 		}
@@ -64,12 +72,35 @@ io.on('connect', (socket) => {
 		const { follower, sessionId }: FollowerData = JSON.parse(followerData)
 		if (!isValidGuid(sessionId)) return
 
-		const sessionData = JSON.parse((await redisClient.get(sessionId))!)
-		sessionData['follower'] = follower
+		const sessionData: SessionData = JSON.parse(
+			(await redisClient.get(sessionId))!
+		)
+		sessionData.follower = follower
+		sessionData.followerSocketId = socket.id
 
 		await redisClient.set(sessionId, JSON.stringify(sessionData))
 
 		io.to(sessionData.initiatorSocketId).emit('follower_data', follower)
+	})
+
+	socket.on('conductor', async (data) => {
+		const receivedData: CommunicationData = JSON.parse(data)
+
+		const sessionData: SessionData = JSON.parse(
+			(await redisClient.get(receivedData.sessionId))!
+		)
+
+		if (receivedData.isInitiator) {
+			io.to(sessionData.followerSocketId).emit(
+				'connection',
+				receivedData.data
+			)
+		} else {
+			io.to(sessionData.initiatorSocketId).emit(
+				'connection',
+				receivedData.data
+			)
+		}
 	})
 })
 
