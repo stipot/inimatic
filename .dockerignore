@@ -1,0 +1,7 @@
+**/node_modules
+**/deployment
+**/.git
+**/www
+**/.nx
+**/.angular
+**/.vscode
