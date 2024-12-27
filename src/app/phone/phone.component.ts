@@ -85,7 +85,7 @@ export class PhoneComponent implements AfterViewInit {
 		// const regexp = new RegExp(/android|iphone|kindle|ipad/i)
 		// this.isInitiator = !regexp.test(navigator.userAgent)
 
-		this.socket.on('disconnection_notification', () => {
+		this.socket.on('initiator_disconnect', () => {
 			this.isConnected = false
 			this.cdr.detectChanges()
 		})
