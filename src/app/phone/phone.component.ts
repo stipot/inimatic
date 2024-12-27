@@ -21,17 +21,10 @@ import {
 	IonIcon,
 } from '@ionic/angular/standalone'
 import { QRCodeModule } from 'angularx-qrcode'
-import SimplePeer from 'simple-peer'
 import { io, Socket } from 'socket.io-client'
 import { environment } from 'src/environments/environment'
 import streamSaver from 'streamsaver'
-import {
-	Data,
-	TransferFileData,
-	VerifyData,
-	SendMessageData,
-	ConnectionType,
-} from 'src/types'
+import { Data, TransferFileData, VerifyData, SendMessageData } from 'src/types'
 
 @Component({
 	selector: 'app-phone',
@@ -63,13 +56,9 @@ export class PhoneComponent implements AfterViewInit {
 	animationRequest = 0
 
 	sessionID = '-'
-	private peer: SimplePeer.Instance
-	outgoingSignal = ''
-	incomingSignal = 'tester'
+	followerName = this.getDeviceId()
 	isInitiator = true
-	isConnected: ConnectionType = null
-	initiatorSignalData = ''
-	followerSignalData = ''
+	isConnected = false
 	message = ''
 	socket: Socket
 	file: File | null = null
@@ -77,6 +66,7 @@ export class PhoneComponent implements AfterViewInit {
 	writer: WritableStreamDefaultWriter<any> | null = null
 	fileData: Data | null = null
 	messagesLog: string[] = []
+
 	constructor(private plt: Platform, private cdr: ChangeDetectorRef) {
 		addIcons({ image, camera, refresh, close })
 		const isInStandaloneMode = () =>
@@ -95,87 +85,40 @@ export class PhoneComponent implements AfterViewInit {
 		// const regexp = new RegExp(/android|iphone|kindle|ipad/i)
 		// this.isInitiator = !regexp.test(navigator.userAgent)
 
-		console.log('Setting up peer, initiator:', this.isInitiator)
-		this.peer = new SimplePeer({
-			initiator: this.isInitiator,
-			trickle: false,
-		})
-
-		this.peer.on('signal', (data: SimplePeer.SignalData) => {
-			// This data needs to be sent to the other peer
-			console.log('outgoingSignal:', JSON.stringify(data))
-			this.outgoingSignal = JSON.stringify(data)
-			if (this.isInitiator) {
-				this.initiatorSignalData = JSON.stringify(data)
-				this.socket.emit('add_initiator', this.initiatorSignalData)
-			} else {
-				this.followerSignalData = JSON.stringify(data)
-				this.socket.emit(
-					'add_follower',
-					JSON.stringify({
-						follower: this.followerSignalData,
-						sessionId: this.sessionID,
-					})
-				)
-			}
-		})
-
-		this.peer.on('connect', () => {
-			this.reset()
-			this.showConnectedStage('WebRTC')
-		})
-
-		this.peer.on('data', (data: any) => {
-			this.receiveData(data)
-		})
-
-		this.peer.on('error', (error: any) => {
-			console.error('Peer connection error:', error)
-			if (!this.isConnected) {
-				return this.connectViaWebSocket()
-			}
-			this.isConnected = null
-			cdr.detectChanges()
-			this.initVideoElements()
-		})
-
-		this.socket.on('session_id', (data) => (this.sessionID = data))
-
-		this.socket.on('follower_data', (data) => {
-			this.followerSignalData = data
-			this.peer.signal(this.followerSignalData)
-		})
-
-		this.socket.on('initiator_data', (data) => {
-			this.initiatorSignalData = data
-			this.peer.signal(this.initiatorSignalData)
-		})
-
 		this.socket.on('disconnection_notification', () => {
-			if (this.isConnected === 'WebSocket') {
-				this.isConnected = null
-				this.cdr.detectChanges()
-			}
+			this.isConnected = false
+			this.cdr.detectChanges()
 		})
 
 		this.socket.on('connection', (data) => {
 			if (data === 'connect') {
-				return this.showConnectedStage('WebSocket')
+				return this.showConnectedStage()
 			}
 
 			this.receiveData(data)
 		})
 	}
 
-	connectViaWebSocket() {
-		this.socket.emit(
-			'conductor',
-			JSON.stringify({
-				sessionId: this.sessionID,
-				isInitiator: this.isInitiator,
-				data: 'connect',
-			})
-		)
+	// connectViaWebSocket() {
+	// 	this.socket.emit(
+	// 		'conductor',
+	// 		JSON.stringify({
+	// 			sessionId: this.sessionID,
+	// 			isInitiator: this.isInitiator,
+	// 			data: 'connect',
+	// 		})
+	// 	)
+	// }
+
+	getDeviceId() {
+		let deviceId = localStorage.getItem('deviceId')
+
+		if (!deviceId) {
+			deviceId = crypto.randomUUID().slice(0, 11)
+			localStorage.setItem('deviceId', deviceId)
+		}
+
+		return deviceId
 	}
 
 	send(data: any) {
@@ -184,18 +127,14 @@ export class PhoneComponent implements AfterViewInit {
 			return
 		}
 
-		if (this.isConnected === 'WebRTC') {
-			this.peer.send(data)
-		} else {
-			this.socket.emit(
-				'conductor',
-				JSON.stringify({
-					sessionId: this.sessionID,
-					isInitiator: this.isInitiator,
-					data: data,
-				})
-			)
-		}
+		this.socket.emit(
+			'conductor',
+			JSON.stringify({
+				sessionId: this.sessionID,
+				isInitiator: this.isInitiator,
+				data: data,
+			})
+		)
 	}
 
 	ngAfterViewInit() {
@@ -228,13 +167,19 @@ export class PhoneComponent implements AfterViewInit {
 
 	connectToSession() {
 		if (!this.isInitiator && this.sessionID) {
-			this.socket.emit('get_initiator', this.sessionID)
+			this.socket.emit(
+				'add_follower',
+				JSON.stringify({
+					sessionId: this.sessionID,
+					followerName: this.followerName,
+				})
+			)
 		}
 	}
 
-	showConnectedStage(connectionType: ConnectionType) {
-		this.isConnected = connectionType
-		console.log('CONNECT', connectionType)
+	showConnectedStage() {
+		this.isConnected = true
+		console.log('CONNECT')
 		this.cdr.detectChanges()
 	}
 
@@ -391,10 +336,6 @@ export class PhoneComponent implements AfterViewInit {
 	}
 
 	async sendChunk(value: Uint8Array) {
-		while (this.peer.bufferSize + value.byteLength > 1024 * 1024) {
-			await new Promise((resolve) => setTimeout(resolve, 50))
-		}
-
 		this.send(
 			JSON.stringify({
 				type: 'transferFile',
@@ -457,8 +398,8 @@ export class PhoneComponent implements AfterViewInit {
 		})
 	}
 
-	async sendVerificationImage() {
-		const imageURL = await this.convertImageToBase64()
-		this.peer.send(JSON.stringify({ type: 'verify', content: imageURL }))
-	}
+	// async sendVerificationImage() {
+	// 	const imageURL = await this.convertImageToBase64()
+	// 	this.peer.send(JSON.stringify({ type: 'verify', content: imageURL }))
+	// }
 }

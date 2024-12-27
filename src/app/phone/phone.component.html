@@ -11,6 +11,8 @@
 <ion-content [fullscreen]="true">
 	<div id="follower_container" *ngIf="!isInitiator" style="text-align: center;">
 		<div *ngIf="!isConnected">
+			<input type="text" placeholder="Your name" [(ngModel)]="followerName">
+
 			<!-- Fallback for iOS PWA -->
 			<input #fileinput type="file" accept="image/*;capture=camera" hidden (change)="handleFile($event)" />
 
@@ -31,10 +33,10 @@
 			</ion-button>
 
 			<!-- Shows our camera stream -->
-			<video playsinline autoplay #video width="30%"></video>
+			<video playsinline autoplay #video width="60%"></video>
 
 			<!-- Used to render the camera stream images -->
-			<canvas #canvas></canvas>
+			<canvas #canvas style="opacity: 0;"></canvas>
 
 			<!-- Stop our scanner preview if active -->
 			<ion-button expand="full" (click)="stopScan()" color="danger" *ngIf="scanActive">
@@ -46,7 +48,6 @@
 	<div class="connected_stage" *ngIf="isConnected">
 		<div>
 			<h2>Connected</h2>
-			<p *ngIf="isConnected === 'WebSocket'" class="hint">connection via webrtc failed, connected via WebSocket</p>
 		</div>
 
 		<div class="transfer_file_form_wrapper">
