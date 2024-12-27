@@ -5,15 +5,17 @@ import { Server } from 'socket.io'
 import { createClient } from 'redis'
 
 type FollowerData = {
-	follower: string
+	followerName: string
 	sessionId: string
 }
 
+type Follower = {
+	[followerSocketId: string]: string
+}
+
 type SessionData = {
-	initiator: string
 	initiatorSocketId: string
-	followerSocketId: string
-	follower: string
+	followers: Follower
 	timestamp: Date
 }
 
@@ -44,43 +46,58 @@ function isValidGuid(guid: string) {
 }
 
 io.on('connect', (socket) => {
-	socket.on('add_initiator', async (initiatorSignalingData) => {
+	socket.on('disconnecting', async () => {
+		const rooms = Array.from(socket.rooms).filter(
+			(roomId) => roomId != socket.id
+		)
+		if (!rooms.length) return
+
+		const sessionId = rooms[0]
+		console.log('disconnect', socket.id, socket.rooms, sessionId)
+		const sessionData: SessionData = JSON.parse(
+			(await redisClient.get(sessionId))!
+		)
+		let isInitiator = sessionData.initiatorSocketId === socket.id
+		if (isInitiator) {
+			socket.to(sessionId).emit('initiator_disconnect')
+		} else {
+			io.to(sessionData.initiatorSocketId).emit(
+				'follower_disconnect',
+				sessionData.followers[socket.id]
+			)
+		}
+	})
+
+	socket.on('add_initiator', async () => {
 		const guid = uuidv4()
-		const sessionData = {
-			initiator: initiatorSignalingData,
+		const sessionData: SessionData = {
 			initiatorSocketId: socket.id,
-			followerSocketId: '',
-			follower: '',
+			followers: {},
 			timestamp: new Date(),
 		}
 		await redisClient.set(guid, JSON.stringify(sessionData))
 		await redisClient.expire(guid, 3600)
 
+		socket.join(guid)
 		socket.emit('session_id', guid)
 	})
 
-	socket.on('get_initiator', async (sessionId) => {
+	socket.on('add_follower', async (data) => {
+		// возможно, стоит проверять наличие других комнат у сокета,
+		// чтоб не было лишних подключений
+		const { followerName, sessionId }: FollowerData = JSON.parse(data)
 		if (!isValidGuid(sessionId)) return
 
 		const sessionData: SessionData = JSON.parse(
 			(await redisClient.get(sessionId))!
 		)
-		socket.emit('initiator_data', sessionData.initiator)
-	})
+		sessionData.followers[socket.id] = followerName
 
-	socket.on('add_follower', async (followerData) => {
-		const { follower, sessionId }: FollowerData = JSON.parse(followerData)
-		if (!isValidGuid(sessionId)) return
-
-		const sessionData: SessionData = JSON.parse(
-			(await redisClient.get(sessionId))!
-		)
-		sessionData.follower = follower
-		sessionData.followerSocketId = socket.id
+		socket.join(sessionId)
 
 		await redisClient.set(sessionId, JSON.stringify(sessionData))
 
-		io.to(sessionData.initiatorSocketId).emit('follower_data', follower)
+		io.to(sessionData.initiatorSocketId).emit('follower_data', followerName)
 	})
 
 	socket.on('conductor', async (data) => {
@@ -91,10 +108,9 @@ io.on('connect', (socket) => {
 		)
 
 		if (receivedData.isInitiator) {
-			io.to(sessionData.followerSocketId).emit(
-				'connection',
-				receivedData.data
-			)
+			socket
+				.to(receivedData.sessionId)
+				.emit('connection', receivedData.data)
 		} else {
 			io.to(sessionData.initiatorSocketId).emit(
 				'connection',
