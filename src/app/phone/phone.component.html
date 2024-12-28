@@ -36,7 +36,7 @@
 			<video playsinline autoplay #video width="60%"></video>
 
 			<!-- Used to render the camera stream images -->
-			<canvas #canvas style="opacity: 0;"></canvas>
+			<canvas #canvas style="display: none;"></canvas>
 
 			<!-- Stop our scanner preview if active -->
 			<ion-button expand="full" (click)="stopScan()" color="danger" *ngIf="scanActive">

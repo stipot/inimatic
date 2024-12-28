@@ -88,10 +88,12 @@ export class PhoneComponent implements AfterViewInit {
 		this.socket.on('initiator_disconnect', () => {
 			this.isConnected = false
 			this.cdr.detectChanges()
+			this.initVideoElements()
 		})
 
 		this.socket.on('connection', (data) => {
 			if (data === 'connect') {
+				this.reset()
 				return this.showConnectedStage()
 			}
 
