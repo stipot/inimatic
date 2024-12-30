@@ -17,4 +17,13 @@ export type VerifyData = {
 	content: string
 }
 
-export type Data = TransferFileData | SendMessageData | VerifyData
+export type ConfirmationData = {
+	type: 'confirmation'
+	confirmed: boolean
+}
+
+export type Data =
+	| TransferFileData
+	| SendMessageData
+	| VerifyData
+	| ConfirmationData

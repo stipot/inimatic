@@ -10,7 +10,9 @@
 
 <ion-content [fullscreen]="true">
 	<div id="follower_container" *ngIf="!isInitiator" style="text-align: center;">
-		<div *ngIf="!isConnected()">
+		<div *ngIf="!isConnected">
+			<input type="text" placeholder="Your name" [(ngModel)]="followerName">
+
 			<!-- Fallback for iOS PWA -->
 			<input #fileinput type="file" accept="image/*;capture=camera" hidden (change)="handleFile($event)" />
 
@@ -31,10 +33,10 @@
 			</ion-button>
 
 			<!-- Shows our camera stream -->
-			<video playsinline autoplay #video width="30%"></video>
+			<video playsinline autoplay #video width="60%"></video>
 
 			<!-- Used to render the camera stream images -->
-			<canvas #canvas></canvas>
+			<canvas #canvas style="display: none;"></canvas>
 
 			<!-- Stop our scanner preview if active -->
 			<ion-button expand="full" (click)="stopScan()" color="danger" *ngIf="scanActive">
@@ -43,8 +45,11 @@
 			</ion-button>
 		</div>
 	</div>
-	<div class="connected_stage" *ngIf="isConnected()">
-		<h2>Connected</h2>
+	<div class="connected_stage" *ngIf="isConnected">
+		<div>
+			<h2>Connected</h2>
+		</div>
+
 		<div class="transfer_file_form_wrapper">
 			<form class="transfer_file_form">
 				<input type="file" (change)="uploadFile($event)" />
@@ -56,7 +61,7 @@
 
 		<div>
 			<input type="text" [(ngModel)]="message" placeholder="Enter message to send" />
-			<ion-button (click)="send()">Send Message</ion-button>
+			<ion-button (click)="sendMessage()">Send Message</ion-button>
 		</div>
 		<div>
 			<p *ngIf="messagesLog.length > 0">Messages:</p>

@@ -9,35 +9,55 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-	<div id="initiator_container" *ngIf="isInitiator">
-		<div class="instruction" *ngIf="!isConnected()">
-			<div>
-				<strong>1. Open Inimatic application on your phone</strong>
-				<p>and point it to the screen</p>
+	<div class="content">
+		<div id="initiator_container" *ngIf="isInitiator">
+			<div class="instruction">
+				<div>
+					<strong>1. Open Inimatic application on your phone</strong>
+					<p>and point it to the screen</p>
+				</div>
+				<p>{{sessionID}}</p>
+				@if (verificationStep) {
+					<img [src]="verificationImage" alt="verification image" [width]="200">
+				} @else {
+					<qrcode [qrdata]="sessionID" [width]="200" [errorCorrectionLevel]="'M'" *ngIf="sessionID!='-'"></qrcode>
+				}
+
 			</div>
-			<p>{{sessionID}}</p>
-			<qrcode [qrdata]="sessionID" [width]="256" [errorCorrectionLevel]="'M'" *ngIf="sessionID!='-'"></qrcode>
+		</div>
+
+		<div class="connected_stage" *ngIf="isConnected">
+			<div>
+				<h2>Connected devices:</h2>
+				<ul class="follower_list">
+					<li *ngFor="let follower of followers">
+						<ion-card>
+							<ion-card-title>{{follower}}</ion-card-title>
+						</ion-card>
+					</li>
+				</ul>
+			</div>
+
+			<div class="functional">
+				<div class="transfer_file_form_wrapper">
+					<form class="transfer_file_form">
+						<input type="file" (change)="uploadFile($event)" />
+						<ion-button type="submit" (click)="transferFile()">
+							Transfer file
+						</ion-button>
+					</form>
+				</div>
+
+				<div>
+					<input type="text" [(ngModel)]="message" placeholder="Enter message to send" />
+					<ion-button (click)="sendMessage()">Send Message</ion-button>
+				</div>
+				<div class="message_log">
+					<p *ngIf="messagesLog.length > 0">Messages:</p>
+					<p *ngFor="let messageL of messagesLog">{{messageL}}</p>
+				</div>
+			</div>
 		</div>
 	</div>
 
-	<div class="connected_stage" *ngIf="isConnected()">
-		<h2>Connected</h2>
-		<div class="transfer_file_form_wrapper">
-			<form class="transfer_file_form">
-				<input type="file" (change)="uploadFile($event)" />
-				<ion-button type="submit" (click)="transferFile()">
-					Transfer file
-				</ion-button>
-			</form>
-		</div>
-
-		<div>
-			<input type="text" [(ngModel)]="message" placeholder="Enter message to send" />
-			<ion-button (click)="send()">Send Message</ion-button>
-		</div>
-		<div>
-			<p *ngIf="messagesLog.length > 0">Messages:</p>
-			<p *ngFor="let messageL of messagesLog">{{messageL}}</p>
-		</div>
-	</div>
 </ion-content>
