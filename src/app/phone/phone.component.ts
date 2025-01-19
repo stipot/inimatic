@@ -101,17 +101,6 @@ export class PhoneComponent implements AfterViewInit {
 		})
 	}
 
-	// connectViaWebSocket() {
-	// 	this.socket.emit(
-	// 		'conductor',
-	// 		JSON.stringify({
-	// 			sessionId: this.sessionID,
-	// 			isInitiator: this.isInitiator,
-	// 			data: 'connect',
-	// 		})
-	// 	)
-	// }
-
 	getDeviceId() {
 		let deviceId = localStorage.getItem('deviceId')
 
@@ -188,6 +177,17 @@ export class PhoneComponent implements AfterViewInit {
 	sendMessage() {
 		this.send(
 			JSON.stringify({ type: 'sendMessage', message: this.message })
+		)
+	}
+
+	disconnect() {
+		this.socket.emit(
+			'disconnect_follower',
+			JSON.stringify({
+				sessionId: this.sessionID,
+				isInitiator: this.isInitiator,
+				followerName: this.followerName,
+			})
 		)
 	}
 

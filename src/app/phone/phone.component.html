@@ -11,7 +11,7 @@
 <ion-content [fullscreen]="true">
 	<div id="follower_container" *ngIf="!isInitiator" style="text-align: center;">
 		<div *ngIf="!isConnected">
-			<input type="text" placeholder="Your name" [(ngModel)]="followerName">
+			<input type="text" placeholder="Your name" [(ngModel)]="followerName" maxlength="11">
 
 			<!-- Fallback for iOS PWA -->
 			<input #fileinput type="file" accept="image/*;capture=camera" hidden (change)="handleFile($event)" />
@@ -48,6 +48,7 @@
 	<div class="connected_stage" *ngIf="isConnected">
 		<div>
 			<h2>Connected</h2>
+			<ion-button color="danger" (click)="disconnect()">Disconnect</ion-button>
 		</div>
 
 		<div class="transfer_file_form_wrapper">
