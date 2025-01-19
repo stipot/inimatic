@@ -14,6 +14,7 @@ import {
 	IonCard,
 	IonCardContent,
 	IonCardTitle,
+	IonIcon,
 } from '@ionic/angular/standalone'
 import { QRCodeModule } from 'angularx-qrcode'
 import { io, Socket } from 'socket.io-client'
@@ -33,6 +34,7 @@ import {
 	styleUrls: ['home.page.scss'],
 	standalone: true,
 	imports: [
+		IonIcon,
 		IonCardTitle,
 		IonCard,
 		IonHeader,
@@ -63,7 +65,7 @@ export class HomePage {
 	messagesLog: string[] = []
 
 	constructor(private plt: Platform, private cdr: ChangeDetectorRef) {
-		addIcons({ camera, refresh, close })
+		addIcons({ close, camera, refresh })
 		const isInStandaloneMode = () =>
 			'standalone' in window.navigator && window.navigator['standalone']
 
@@ -137,6 +139,17 @@ export class HomePage {
 		this.isConnected = true
 		console.log('CONNECT')
 		this.cdr.detectChanges()
+	}
+
+	disconnectDevice(followerName: string) {
+		this.socket.emit(
+			'disconnect_follower',
+			JSON.stringify({
+				sessionId: this.sessionID,
+				isInitiator: this.isInitiator,
+				followerName: followerName,
+			})
+		)
 	}
 
 	sendMessage() {

@@ -5,7 +5,7 @@
 	align-items: center;
 	position: absolute;
 	width: 100%;
-	height: calc(100% - 56px);
+	padding: 10px;
 	gap: 100px;
 }
 
@@ -66,4 +66,20 @@
 .message_log {
 	height: 120px;
 	overflow: auto;
+}
+
+.follower_device {
+	position: relative;
+}
+
+.follower_device ion-icon {
+	font-size: 25px;
+	fill: red;
+}
+
+.follower_device > button {
+	background: none;
+	position: absolute;
+	right: 0;
+	top: 0;
 }

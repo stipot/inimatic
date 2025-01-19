@@ -31,8 +31,11 @@
 				<h2>Connected devices:</h2>
 				<ul class="follower_list">
 					<li *ngFor="let follower of followers">
-						<ion-card>
+						<ion-card class="follower_device">
 							<ion-card-title>{{follower}}</ion-card-title>
+							<button (click)="disconnectDevice(follower)">
+								<ion-icon name="close" ></ion-icon>
+							</button>
 						</ion-card>
 					</li>
 				</ul>
