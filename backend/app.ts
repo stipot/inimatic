@@ -100,6 +100,40 @@ io.on('connect', (socket) => {
 		io.to(sessionData.initiatorSocketId).emit('follower_data', followerName)
 	})
 
+	socket.on('disconnect_follower', async (data) => {
+		const { followerName, sessionId, isInitiator } = JSON.parse(data)
+		if (!isValidGuid(sessionId)) return
+
+		const sessionData: SessionData = JSON.parse(
+			(await redisClient.get(sessionId))!
+		)
+
+		if (isInitiator) {
+			const socketIds = Object.keys(sessionData.followers).filter(
+				(followerSocketId) =>
+					sessionData.followers[followerSocketId] === followerName
+			)
+			if (socketIds.length === 1) {
+				delete sessionData.followers[socketIds[0]]
+				await redisClient.set(sessionId, JSON.stringify(sessionData))
+				const sockets = await io.sockets.fetchSockets()
+				const followerSocket = sockets.filter(
+					(socket) => socket.id === socketIds[0]
+				)[0]
+				followerSocket.leave(sessionId)
+				followerSocket.emit('initiator_disconnect')
+				socket.emit('follower_disconnect', followerName)
+			}
+		} else {
+			socket.leave(sessionId)
+			socket.emit('initiator_disconnect')
+			io.to(sessionData.initiatorSocketId).emit(
+				'follower_disconnect',
+				followerName
+			)
+		}
+	})
+
 	socket.on('conductor', async (data) => {
 		const receivedData: CommunicationData = JSON.parse(data)
 
