@@ -58,7 +58,7 @@ services:
             - TZ=Europe/Moscow
             - LETSENCRYPT=true
             - LE_EMAIL=connect@stipot.com
-            - LE_FQDN=inimatic.com
+            - LE_FQDN=ru.inimatic.com
 
 volumes:
     cert_volume: {}
