@@ -85,7 +85,17 @@ export class PhoneComponent implements AfterViewInit {
 		// const regexp = new RegExp(/android|iphone|kindle|ipad/i)
 		// this.isInitiator = !regexp.test(navigator.userAgent)
 
-		this.socket.on('initiator_disconnect', () => {
+		this.socket.on('initiator_disconnect', async () => {
+			if (this.writer) {
+				this.writer.releaseLock()
+				this.writer = null
+			}
+
+			if (this.writableStream) {
+				await this.writableStream.abort()
+				this.writableStream = null
+			}
+
 			this.isConnected = false
 			this.cdr.detectChanges()
 			this.initVideoElements()

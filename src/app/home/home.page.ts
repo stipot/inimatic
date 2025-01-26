@@ -91,13 +91,23 @@ export class HomePage {
 			this.showConnectedStage()
 		})
 
-		this.socket.on('follower_disconnect', (follower) => {
+		this.socket.on('follower_disconnect', async (follower) => {
 			this.followers = this.followers.filter(
 				(followerName) => followerName !== follower
 			)
 
 			if (!this.followers.length) {
 				this.isConnected = false
+			}
+
+			if (this.writer) {
+				this.writer.releaseLock()
+				this.writer = null
+			}
+
+			if (this.writableStream) {
+				await this.writableStream.abort()
+				this.writableStream = null
 			}
 
 			this.cdr.detectChanges()
