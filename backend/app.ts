@@ -32,7 +32,11 @@ app.use((req, res) => {
 })
 
 const server = http.createServer(app)
-const io = new Server(server, { cors: { origin: '*' } })
+const io = new Server(server, {
+	cors: { origin: '*' },
+	pingTimeout: 10000,
+	pingInterval: 10000,
+})
 
 const url = `redis://${process.env['PRODUCTION'] ? 'redis' : 'localhost'}:6379`
 const redisClient = await createClient({ url })
@@ -85,14 +89,15 @@ io.on('connect', (socket) => {
 	socket.on('add_follower', async (data) => {
 		// возможно, стоит проверять наличие других комнат у сокета,
 		// чтоб не было лишних подключений
-		const { followerName, sessionId }: FollowerData = JSON.parse(data)
+		const { followerName, sessionId }: FollowerData = data
 		if (!isValidGuid(sessionId)) return
 
 		const sessionData: SessionData = JSON.parse(
 			(await redisClient.get(sessionId))!
 		)
-		sessionData.followers[socket.id] = followerName
+		if (sessionData === null) return
 
+		sessionData.followers[socket.id] = followerName
 		socket.join(sessionId)
 
 		await redisClient.set(sessionId, JSON.stringify(sessionData))
@@ -101,7 +106,7 @@ io.on('connect', (socket) => {
 	})
 
 	socket.on('disconnect_follower', async (data) => {
-		const { followerName, sessionId, isInitiator } = JSON.parse(data)
+		const { followerName, sessionId, isInitiator } = data
 		if (!isValidGuid(sessionId)) return
 
 		const sessionData: SessionData = JSON.parse(
@@ -113,6 +118,8 @@ io.on('connect', (socket) => {
 				(followerSocketId) =>
 					sessionData.followers[followerSocketId] === followerName
 			)
+			console.log(socketIds)
+
 			if (socketIds.length === 1) {
 				delete sessionData.followers[socketIds[0]]
 				await redisClient.set(sessionId, JSON.stringify(sessionData))
@@ -134,8 +141,8 @@ io.on('connect', (socket) => {
 		}
 	})
 
-	socket.on('conductor', async (data) => {
-		const receivedData: CommunicationData = JSON.parse(data)
+	socket.on('conductor', async (data, fn) => {
+		const receivedData: CommunicationData = data
 
 		const sessionData: SessionData = JSON.parse(
 			(await redisClient.get(receivedData.sessionId))!
@@ -150,6 +157,10 @@ io.on('connect', (socket) => {
 				'connection',
 				receivedData.data
 			)
+		}
+
+		if (fn) {
+			fn(1)
 		}
 	})
 })
