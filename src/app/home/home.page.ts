@@ -85,9 +85,9 @@ export class HomePage {
 
 		this.socket.on('session_id', (data) => (this.sessionID = data))
 
-		this.socket.on('follower_data', (data) => {
+		this.socket.on('follower_data', async (data) => {
 			this.followers.push(data)
-			this.connect()
+			await this.connect()
 			this.showConnectedStage()
 		})
 
@@ -108,31 +108,29 @@ export class HomePage {
 		})
 	}
 
-	send(data: any) {
+	async send(data: any) {
 		if (!this.isConnected) {
-			console.log('socket not connected.')
+			console.log('Peer not connected.')
 			return
 		}
+		console.log('send')
 
-		this.socket.emit(
-			'conductor',
-			JSON.stringify({
+		await new Promise((resolve) => {
+			this.socket.emit('conductor', {
 				sessionId: this.sessionID,
 				isInitiator: this.isInitiator,
 				data: data,
 			})
-		)
+			resolve(true)
+		})
 	}
 
-	connect() {
-		this.socket.emit(
-			'conductor',
-			JSON.stringify({
-				sessionId: this.sessionID,
-				isInitiator: this.isInitiator,
-				data: 'connect',
-			})
-		)
+	async connect() {
+		this.socket.emit('conductor', {
+			sessionId: this.sessionID,
+			isInitiator: this.isInitiator,
+			data: 'connect',
+		})
 	}
 
 	showConnectedStage() {
@@ -142,20 +140,15 @@ export class HomePage {
 	}
 
 	disconnectDevice(followerName: string) {
-		this.socket.emit(
-			'disconnect_follower',
-			JSON.stringify({
-				sessionId: this.sessionID,
-				isInitiator: this.isInitiator,
-				followerName: followerName,
-			})
-		)
+		this.socket.emit('disconnect_follower', {
+			sessionId: this.sessionID,
+			isInitiator: this.isInitiator,
+			followerName: followerName,
+		})
 	}
 
 	sendMessage() {
-		this.send(
-			JSON.stringify({ type: 'sendMessage', message: this.message })
-		)
+		this.send({ type: 'sendMessage', message: this.message })
 	}
 
 	uploadFile(event: Event) {
@@ -165,13 +158,11 @@ export class HomePage {
 	}
 
 	async transferFile() {
-		this.send(
-			JSON.stringify({
-				type: 'transferFile',
-				fileName: this.file?.name,
-				size: this.file?.size,
-			})
-		)
+		this.send({
+			type: 'transferFile',
+			fileName: this.file?.name,
+			size: this.file?.size,
+		})
 
 		const chunksize = 64 * 1024
 		let offset = 0
@@ -182,29 +173,25 @@ export class HomePage {
 			offset += chunksize
 		}
 
-		this.send(
-			JSON.stringify({
-				type: 'transferFile',
-				fileName: this.file!.name,
-				size: this.file!.size,
-				end: true,
-			})
-		)
+		this.send({
+			type: 'transferFile',
+			fileName: this.file!.name,
+			size: this.file!.size,
+			end: true,
+		})
 	}
 
 	async sendChunk(value: Uint8Array) {
-		this.send(
-			JSON.stringify({
-				type: 'transferFile',
-				fileName: this.file!.name,
-				size: this.file!.size,
-				content: Array.from(value),
-			})
-		)
+		this.send({
+			type: 'transferFile',
+			fileName: this.file!.name,
+			size: this.file!.size,
+			content: Array.from(value),
+		})
 	}
 
 	receiveData(data: any) {
-		const receivedData: Data = JSON.parse(data)
+		const receivedData: Data = data
 
 		if (receivedData.type === 'transferFile') {
 			this.receiveFile(receivedData)

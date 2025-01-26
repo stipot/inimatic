@@ -112,20 +112,23 @@ export class PhoneComponent implements AfterViewInit {
 		return deviceId
 	}
 
-	send(data: any) {
+	async send(data: any) {
 		if (!this.isConnected) {
 			console.log('Peer not connected.')
 			return
 		}
 
-		this.socket.emit(
-			'conductor',
-			JSON.stringify({
-				sessionId: this.sessionID,
-				isInitiator: this.isInitiator,
-				data: data,
-			})
-		)
+		await new Promise((resolve) => {
+			this.socket.emit(
+				'conductor',
+				{
+					sessionId: this.sessionID,
+					isInitiator: this.isInitiator,
+					data: data,
+				},
+				() => resolve(true)
+			)
+		})
 	}
 
 	ngAfterViewInit() {
@@ -158,13 +161,10 @@ export class PhoneComponent implements AfterViewInit {
 
 	connectToSession() {
 		if (!this.isInitiator && this.sessionID) {
-			this.socket.emit(
-				'add_follower',
-				JSON.stringify({
-					sessionId: this.sessionID,
-					followerName: this.followerName,
-				})
-			)
+			this.socket.emit('add_follower', {
+				sessionId: this.sessionID,
+				followerName: this.followerName,
+			})
 		}
 	}
 
@@ -174,21 +174,16 @@ export class PhoneComponent implements AfterViewInit {
 		this.cdr.detectChanges()
 	}
 
-	sendMessage() {
-		this.send(
-			JSON.stringify({ type: 'sendMessage', message: this.message })
-		)
+	async sendMessage() {
+		await this.send({ type: 'sendMessage', message: this.message })
 	}
 
 	disconnect() {
-		this.socket.emit(
-			'disconnect_follower',
-			JSON.stringify({
-				sessionId: this.sessionID,
-				isInitiator: this.isInitiator,
-				followerName: this.followerName,
-			})
-		)
+		this.socket.emit('disconnect_follower', {
+			sessionId: this.sessionID,
+			isInitiator: this.isInitiator,
+			followerName: this.followerName,
+		})
 	}
 
 	async startScan() {
@@ -310,13 +305,11 @@ export class PhoneComponent implements AfterViewInit {
 	}
 
 	async transferFile() {
-		this.send(
-			JSON.stringify({
-				type: 'transferFile',
-				fileName: this.file?.name,
-				size: this.file?.size,
-			})
-		)
+		await this.send({
+			type: 'transferFile',
+			fileName: this.file?.name,
+			size: this.file?.size,
+		})
 
 		const chunksize = 64 * 1024
 		let offset = 0
@@ -327,29 +320,26 @@ export class PhoneComponent implements AfterViewInit {
 			offset += chunksize
 		}
 
-		this.send(
-			JSON.stringify({
-				type: 'transferFile',
-				fileName: this.file!.name,
-				size: this.file!.size,
-				end: true,
-			})
-		)
+		await this.send({
+			type: 'transferFile',
+			fileName: this.file!.name,
+			size: this.file!.size,
+			end: true,
+		})
 	}
 
 	async sendChunk(value: Uint8Array) {
-		this.send(
-			JSON.stringify({
-				type: 'transferFile',
-				fileName: this.file!.name,
-				size: this.file!.size,
-				content: Array.from(value),
-			})
-		)
+		await this.send({
+			type: 'transferFile',
+			fileName: this.file!.name,
+			size: this.file!.size,
+			content: Array.from(value),
+		})
+		setTimeout(() => {}, 0)
 	}
 
 	receiveData(data: any) {
-		const receivedData: Data = JSON.parse(data)
+		const receivedData: Data = data
 		if (receivedData.type === 'transferFile') {
 			this.receiveFile(receivedData)
 		} else if (receivedData.type === 'sendMessage') {
