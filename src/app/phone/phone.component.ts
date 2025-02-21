@@ -125,8 +125,7 @@ export class PhoneComponent implements AfterViewInit {
 		let deviceId = localStorage.getItem('deviceId')
 
 		if (!deviceId) {
-			// deviceId = crypto.randomUUID().slice(0, 11)
-			deviceId = '01234567890'
+			deviceId = crypto.randomUUID().slice(0, 11)
 			localStorage.setItem('deviceId', deviceId)
 		}
 
