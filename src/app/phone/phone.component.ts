@@ -5,6 +5,7 @@ import {
 	AfterViewInit,
 	ChangeDetectorRef,
 } from '@angular/core'
+import { ActivatedRoute } from '@angular/router'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms' // Make sure this import is included
 import { Platform } from '@ionic/angular'
@@ -67,7 +68,11 @@ export class PhoneComponent implements AfterViewInit {
 	fileData: Data | null = null
 	messagesLog: string[] = []
 
-	constructor(private plt: Platform, private cdr: ChangeDetectorRef) {
+	constructor(
+		private plt: Platform,
+		private cdr: ChangeDetectorRef,
+		private route: ActivatedRoute
+	) {
 		addIcons({ image, camera, refresh, close })
 		const isInStandaloneMode = () =>
 			'standalone' in window.navigator && window.navigator['standalone']
@@ -109,13 +114,19 @@ export class PhoneComponent implements AfterViewInit {
 
 			this.receiveData(data)
 		})
+
+		if (this.route.snapshot.queryParamMap.get('sessionId')) {
+			this.sessionID = this.route.snapshot.queryParamMap.get('sessionId')!
+			this.connectToSession()
+		}
 	}
 
 	getDeviceId() {
 		let deviceId = localStorage.getItem('deviceId')
 
 		if (!deviceId) {
-			deviceId = crypto.randomUUID().slice(0, 11)
+			// deviceId = crypto.randomUUID().slice(0, 11)
+			deviceId = '01234567890'
 			localStorage.setItem('deviceId', deviceId)
 		}
 
@@ -249,7 +260,7 @@ export class PhoneComponent implements AfterViewInit {
 				this.stopScan()
 				this.scanActive = false
 				this.scanResult = code.data
-				this.sessionID = this.scanResult!
+				this.sessionID = this.scanResult!.split('sessionId=')[1]
 				this.connectToSession()
 			} else {
 				if (this.scanActive) {
@@ -301,7 +312,7 @@ export class PhoneComponent implements AfterViewInit {
 
 			if (code) {
 				this.scanResult = code.data
-				this.sessionID = this.scanResult!
+				this.sessionID = this.scanResult!.split('sessionId=')[1]
 				this.connectToSession()
 			}
 		}

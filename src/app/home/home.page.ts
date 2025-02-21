@@ -50,6 +50,8 @@ import {
 })
 export class HomePage {
 	sessionID = '-'
+	url = location.origin + '/follower'
+	qrData = ''
 	incomingSignal = 'tester'
 	isInitiator = true
 	verificationStep = false
@@ -83,7 +85,10 @@ export class HomePage {
 		// this.isInitiator = !regexp.test(navigator.userAgent)
 		this.socket.emit('add_initiator')
 
-		this.socket.on('session_id', (data) => (this.sessionID = data))
+		this.socket.on('session_id', (data) => {
+			this.sessionID = data
+			this.qrData = this.url + `?sessionId=${this.sessionID}`
+		})
 
 		this.socket.on('follower_data', async (data) => {
 			this.followers.push(data)

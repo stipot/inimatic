@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import { Routes } from '@angular/router'
 
 export const routes: Routes = [
 	{
@@ -7,10 +7,11 @@ export const routes: Routes = [
 	},
 	{
 		path: 'follower',
-		loadComponent: () => import('./phone/phone.component').then((m) => m.PhoneComponent),
+		loadComponent: () =>
+			import('./phone/phone.component').then((m) => m.PhoneComponent),
 	},
 	{
 		path: '',
 		loadComponent: () => import('./home/home.page').then((m) => m.HomePage),
 	},
-];
+]

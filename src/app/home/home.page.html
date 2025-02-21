@@ -20,7 +20,7 @@
 				@if (verificationStep) {
 					<img [src]="verificationImage" alt="verification image" [width]="200">
 				} @else {
-					<qrcode [qrdata]="sessionID" [width]="200" [errorCorrectionLevel]="'M'" *ngIf="sessionID!='-'"></qrcode>
+					<qrcode [qrdata]="qrData" [width]="200" [errorCorrectionLevel]="'M'" *ngIf="qrData != ''"></qrcode>
 				}
 
 			</div>
