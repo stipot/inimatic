@@ -395,6 +395,46 @@ export class PhoneComponent implements AfterViewInit {
 		this.messagesLog = this.messagesLog.concat([receivedData.message])
 	}
 
+	getRandomDigits(n: number) {
+		return Array.from({ length: n }, () =>
+			Math.floor(Math.random() * 10).toString()
+		)
+	}
+
+	generateImage(
+		digits: string[],
+		imageSize: number = 400
+	): HTMLCanvasElement {
+		const canvas = document.createElement('canvas')
+		canvas.width = imageSize
+		canvas.height = imageSize
+		const ctx = canvas.getContext('2d')
+
+		if (!ctx) throw new Error()
+
+		ctx.fillStyle = 'white'
+		ctx.fillRect(0, 0, imageSize, imageSize)
+
+		const fontSize = imageSize / 2
+		ctx.font = `${fontSize}px sans-serif`
+		ctx.fillStyle = 'black'
+
+		// const textMetrics = ctx.measureText('8')
+		const offsetY = 53
+
+		const x1 = imageSize / 10
+		const y1 = -offsetY / 2
+		const x2 = (imageSize / 10) * 6
+		const y2 = imageSize / 2 - offsetY / 2
+
+		ctx.fillText(digits[0], x1, y1 + fontSize)
+		ctx.fillText(digits[1], x2, y1 + fontSize)
+		ctx.fillText(digits[2], x1, y2 + fontSize)
+		ctx.fillText(digits[3], x2, y2 + fontSize)
+
+		return canvas
+	}
+
 	convertImageToBase64() {
 		return new Promise((resolve) => {
 			let canvas = document.createElement('canvas')
