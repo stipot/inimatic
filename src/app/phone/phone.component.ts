@@ -67,6 +67,7 @@ export class PhoneComponent implements AfterViewInit {
 	writer: WritableStreamDefaultWriter<any> | null = null
 	fileData: Data | null = null
 	messagesLog: string[] = []
+	// verificationImage: string = this.generateTransformedImage()
 
 	constructor(
 		private plt: Platform,
@@ -260,7 +261,8 @@ export class PhoneComponent implements AfterViewInit {
 				this.scanActive = false
 				this.scanResult = code.data
 				this.sessionID = this.scanResult!.split('sessionId=')[1]
-				this.connectToSession()
+				// this.connectToSession()
+				this.sendVerificationImage()
 			} else {
 				if (this.scanActive) {
 					this.animationRequest = requestAnimationFrame(
@@ -312,7 +314,8 @@ export class PhoneComponent implements AfterViewInit {
 			if (code) {
 				this.scanResult = code.data
 				this.sessionID = this.scanResult!.split('sessionId=')[1]
-				this.connectToSession()
+				// this.connectToSession()
+				this.sendVerificationImage()
 			}
 		}
 		img.src = URL.createObjectURL(file)
@@ -435,23 +438,83 @@ export class PhoneComponent implements AfterViewInit {
 		return canvas
 	}
 
-	convertImageToBase64() {
-		return new Promise((resolve) => {
-			let canvas = document.createElement('canvas')
-			let img = document.createElement('img')
-			img.src = 'assets/images/stub.png'
-			img.onload = () => {
-				canvas.height = img.height
-				canvas.width = img.width
-				let ctx = canvas.getContext('2d')
-				ctx!.drawImage(img, 0, 0)
-				resolve(canvas.toDataURL('image/png'))
+	waveTransform(
+		imgData: ImageData,
+		waveLen: number = 40,
+		step: number = 2
+	): ImageData {
+		const width = imgData.width
+		const height = imgData.height
+		const data = imgData.data
+
+		const newData = new Uint8ClampedArray(data.length)
+
+		let counter = step
+		let flag = true
+		let rowHeight = 2
+
+		for (let i = 0; i < height; i++) {
+			if (i % rowHeight == 0) {
+				if (counter === step) {
+					flag = true
+				}
+				if (counter === waveLen) {
+					flag = false
+				}
+				counter = flag ? counter + step : counter - step
 			}
-		})
+
+			let newIndex = i * width * 4
+			let oldIndex = i * width * 4
+			for (let j = 0; j < width * rowHeight; j++) {
+				if (j < counter) {
+					newData[newIndex] = 255 // R
+					newData[newIndex + 1] = 255 // G
+					newData[newIndex + 2] = 255 // B
+					newData[newIndex + 3] = 255 // A
+				} else {
+					newData[newIndex] = data[oldIndex]
+					newData[newIndex + 1] = data[oldIndex + 1]
+					newData[newIndex + 2] = data[oldIndex + 2]
+					newData[newIndex + 3] = data[oldIndex + 3]
+					oldIndex += 4
+				}
+				newIndex += 4
+			}
+		}
+
+		return new ImageData(newData, width, height)
 	}
 
-	// async sendVerificationImage() {
-	// 	const imageURL = await this.convertImageToBase64()
-	// 	this.peer.send(JSON.stringify({ type: 'verify', content: imageURL }))
-	// }
+	generateTransformedImage() {
+		const digits = this.getRandomDigits(4)
+
+		const canvas = this.generateImage(digits)
+		const ctx = canvas.getContext('2d')
+
+		if (!ctx) {
+			throw new Error('Не удалось получить контекст рисования')
+		}
+
+		const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+		const transformedImgData = this.waveTransform(imgData)
+
+		ctx.putImageData(transformedImgData, 0, 0)
+		return canvas.toDataURL('image/jpeg')
+	}
+
+	async sendVerificationImage() {
+		const imageURL = this.generateTransformedImage()
+		await new Promise((resolve) => {
+			this.socket.emit(
+				'conductor',
+				{
+					sessionId: this.sessionID,
+					isInitiator: this.isInitiator,
+					data: { type: 'verify', content: imageURL },
+				},
+				() => resolve(true)
+			)
+		})
+	}
 }
