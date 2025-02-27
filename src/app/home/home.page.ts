@@ -97,6 +97,10 @@ export class HomePage {
 		})
 
 		this.socket.on('follower_disconnect', async (follower) => {
+			if (this.verificationStep) {
+				this.verificationStep = false
+			}
+
 			this.followers = this.followers.filter(
 				(followerName) => followerName !== follower
 			)

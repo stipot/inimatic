@@ -46,6 +46,7 @@
 		"@ionic/angular": "^8.0.0",
 		"@ionic/cli": "^7.2.0",
 		"@ionic/cordova-builders": "^11.0.0",
+		"@tensorflow/tfjs": "^4.22.0",
 		"angularx-qrcode": "^17.0.0",
 		"axios": "^1.7.2",
 		"body-parser": "^1.20.2",

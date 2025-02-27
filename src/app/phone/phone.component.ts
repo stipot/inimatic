@@ -26,6 +26,7 @@ import { io, Socket } from 'socket.io-client'
 import { environment } from 'src/environments/environment'
 import streamSaver from 'streamsaver'
 import { Data, TransferFileData, VerifyData, SendMessageData } from 'src/types'
+import * as tf from '@tensorflow/tfjs'
 
 @Component({
 	selector: 'app-phone',
@@ -52,6 +53,8 @@ export class PhoneComponent implements AfterViewInit {
 	canvasElement: any
 	videoElement: any
 	canvasContext: any
+	verifyImageCanvas: any
+	verifyImageCanvasCtx: any
 	scanActive = false
 	scanResult: string | undefined = undefined
 	animationRequest = 0
@@ -67,7 +70,9 @@ export class PhoneComponent implements AfterViewInit {
 	writer: WritableStreamDefaultWriter<any> | null = null
 	fileData: Data | null = null
 	messagesLog: string[] = []
-	// verificationImage: string = this.generateTransformedImage()
+	model: tf.GraphModel | null = null
+	verifyStep = false
+	digits = []
 
 	constructor(
 		private plt: Platform,
@@ -120,6 +125,10 @@ export class PhoneComponent implements AfterViewInit {
 			this.sessionID = this.route.snapshot.queryParamMap.get('sessionId')!
 			this.connectToSession()
 		}
+
+		tf.loadGraphModel('assets/model/model.json').then(
+			(tfModel) => (this.model = tfModel)
+		)
 	}
 
 	getDeviceId() {
@@ -188,6 +197,14 @@ export class PhoneComponent implements AfterViewInit {
 			})
 		}
 	}
+
+	// connectToSession() {
+	// 	this.socket.emit('conductor', {
+	// 		sessionId: this.sessionID,
+	// 		isInitiator: this.isInitiator,
+	// 		data: 'connect',
+	// 	})
+	// }
 
 	showConnectedStage() {
 		this.isConnected = true
@@ -286,39 +303,110 @@ export class PhoneComponent implements AfterViewInit {
 		}
 
 		const file = input.files[0]
-
+		this.verifyImageCanvas = document.createElement('canvas')
+		this.verifyImageCanvasCtx = this.verifyImageCanvas.getContext('2d')
 		const img = new Image()
 		img.onload = () => {
-			this.canvasContext.drawImage(
-				img,
-				0,
-				0,
-				this.canvasElement.width,
-				this.canvasElement.height
-			)
-			const imageData = this.canvasContext.getImageData(
-				0,
-				0,
-				this.canvasElement.width,
-				this.canvasElement.height
-			)
-			const code = jsQR(
-				imageData.data,
-				imageData.width,
-				imageData.height,
-				{
-					inversionAttempts: 'dontInvert',
-				}
-			)
+			if (!this.verifyStep) {
+				this.canvasContext.drawImage(
+					img,
+					0,
+					0,
+					this.canvasElement.width,
+					this.canvasElement.height
+				)
+				const imageData = this.canvasContext.getImageData(
+					0,
+					0,
+					this.canvasElement.width,
+					this.canvasElement.height
+				)
+				const code = jsQR(
+					imageData.data,
+					imageData.width,
+					imageData.height,
+					{
+						inversionAttempts: 'dontInvert',
+					}
+				)
 
-			if (code) {
-				this.scanResult = code.data
-				this.sessionID = this.scanResult!.split('sessionId=')[1]
-				// this.connectToSession()
-				this.sendVerificationImage()
+				if (code) {
+					this.scanResult = code.data
+					this.sessionID = this.scanResult!.split('sessionId=')[1]
+					// this.connectToSession()
+					this.sendVerificationImage()
+				}
+			} else {
+				const minSide = Math.min(img.width, img.height)
+				this.verifyImageCanvas.width = minSide
+				this.verifyImageCanvas.height = minSide
+
+				const centerX = img.width / 2
+				const centerY = img.height / 2
+
+				const cropX = centerX - minSide / 2
+				const cropY = centerY - minSide / 2
+
+				this.verifyImageCanvasCtx.drawImage(
+					img,
+					cropX,
+					cropY,
+					minSide,
+					minSide,
+					0,
+					0,
+					minSide,
+					minSide
+				)
+				let imgdata = this.verifyImageCanvasCtx.getImageData(
+					0,
+					0,
+					minSide,
+					minSide
+				)
+
+				const resizedCanvas = document.createElement('canvas')
+				const resizedCtx = resizedCanvas.getContext('2d')
+				resizedCanvas.width = 200
+				resizedCanvas.height = 200
+				resizedCtx!.drawImage(this.verifyImageCanvas, 0, 0, 200, 200)
+
+				imgdata = resizedCtx!.getImageData(0, 0, 200, 200)
+				this.toGrayscale(imgdata)
+
+				resizedCtx!.putImageData(imgdata, 0, 0)
+				// console.log(resizedCanvas.toDataURL())
+				// console.log(this.verifyImageCanvas.toDataURL())
+				// @ts-ignore
+				this.digits = this.predictDigits(imgdata)
+				console.log(this.digits)
 			}
 		}
 		img.src = URL.createObjectURL(file)
+	}
+
+	toGrayscale(imageData: ImageData) {
+		for (var i = 0; i < imageData.data.length; i += 4) {
+			let lightness = Math.floor(
+				imageData.data[i] * 0.299 +
+					imageData.data[i + 1] * 0.587 +
+					imageData.data[i + 2] * 0.114
+			)
+			imageData.data[i] = lightness
+			imageData.data[i + 1] = lightness
+			imageData.data[i + 2] = lightness
+		}
+	}
+
+	predictDigits(imageData: ImageData) {
+		// @ts-ignore
+		const predict: tf.Tensor<tf.Rank>[] = this.model?.predict(
+			tf.browser.fromPixels(imageData, 1).expandDims(0).asType('float32')
+		)
+		const digits = predict.map((tensor) =>
+			String(tf.argMax(tensor.dataSync()).dataSync()[0])
+		)
+		return [digits[0], digits[3], digits[1], digits[2]]
 	}
 
 	uploadFile(event: Event) {
@@ -418,12 +506,12 @@ export class PhoneComponent implements AfterViewInit {
 		ctx.fillStyle = 'white'
 		ctx.fillRect(0, 0, imageSize, imageSize)
 
-		const fontSize = imageSize / 2
-		ctx.font = `${fontSize}px sans-serif`
+		const fontSize = imageSize / 2 + 3
+		ctx.font = `${fontSize}px Aileron`
 		ctx.fillStyle = 'black'
 
 		// const textMetrics = ctx.measureText('8')
-		const offsetY = 53
+		const offsetY = 67
 
 		const x1 = imageSize / 10
 		const y1 = -offsetY / 2
@@ -513,7 +601,10 @@ export class PhoneComponent implements AfterViewInit {
 					isInitiator: this.isInitiator,
 					data: { type: 'verify', content: imageURL },
 				},
-				() => resolve(true)
+				() => {
+					this.verifyStep = true
+					resolve(true)
+				}
 			)
 		})
 	}

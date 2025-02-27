@@ -4,7 +4,7 @@
 
 export const environment = {
 	production: false,
-	app_server_url: 'http://localhost:3030/',
+	app_server_url: 'http://192.168.1.13:3030/', //'http://localhost:3030/',
 }
 
 /*

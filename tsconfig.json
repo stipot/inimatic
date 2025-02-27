@@ -3,6 +3,7 @@
 	"compileOnSave": false,
 	"ts-node": { "esm": true },
 	"compilerOptions": {
+		"skipLibCheck": true,
 		"baseUrl": "./",
 		"outDir": "./dist/out-tsc",
 		"forceConsistentCasingInFileNames": true,
