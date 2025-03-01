@@ -53,8 +53,6 @@ export class PhoneComponent implements AfterViewInit {
 	canvasElement: any
 	videoElement: any
 	canvasContext: any
-	verifyImageCanvas: any
-	verifyImageCanvasCtx: any
 	scanActive = false
 	scanResult: string | undefined = undefined
 	animationRequest = 0
@@ -71,8 +69,9 @@ export class PhoneComponent implements AfterViewInit {
 	fileData: Data | null = null
 	messagesLog: string[] = []
 	model: tf.GraphModel | null = null
-	verifyStep = false
-	digits = []
+	verificationStep = false
+	predictedDigits: string[] = []
+	digits: string[] = []
 
 	constructor(
 		private plt: Platform,
@@ -189,7 +188,7 @@ export class PhoneComponent implements AfterViewInit {
 		this.videoElement.srcObject = null
 	}
 
-	connectToSession() {
+	enterToSession() {
 		if (!this.isInitiator && this.sessionID) {
 			this.socket.emit('add_follower', {
 				sessionId: this.sessionID,
@@ -198,13 +197,13 @@ export class PhoneComponent implements AfterViewInit {
 		}
 	}
 
-	// connectToSession() {
-	// 	this.socket.emit('conductor', {
-	// 		sessionId: this.sessionID,
-	// 		isInitiator: this.isInitiator,
-	// 		data: 'connect',
-	// 	})
-	// }
+	connectToSession() {
+		this.socket.emit('conductor', {
+			sessionId: this.sessionID,
+			isInitiator: this.isInitiator,
+			data: 'connect',
+		})
+	}
 
 	showConnectedStage() {
 		this.isConnected = true
@@ -234,7 +233,7 @@ export class PhoneComponent implements AfterViewInit {
 		})
 		this.videoElement.srcObject = stream
 		// Required for Safari
-		console.log(this.videoElement)
+		// console.log(this.videoElement)
 		this.videoElement.setAttribute('playsinline', true)
 
 		this.videoElement.play()
@@ -298,16 +297,17 @@ export class PhoneComponent implements AfterViewInit {
 
 	handleFile(event: Event) {
 		const input = event.target as HTMLInputElement
+
 		if (!input.files?.length) {
 			return
 		}
 
 		const file = input.files[0]
-		this.verifyImageCanvas = document.createElement('canvas')
-		this.verifyImageCanvasCtx = this.verifyImageCanvas.getContext('2d')
+
 		const img = new Image()
 		img.onload = () => {
-			if (!this.verifyStep) {
+			console.log('loaded')
+			if (!this.verificationStep) {
 				this.canvasContext.drawImage(
 					img,
 					0,
@@ -333,56 +333,77 @@ export class PhoneComponent implements AfterViewInit {
 				if (code) {
 					this.scanResult = code.data
 					this.sessionID = this.scanResult!.split('sessionId=')[1]
-					// this.connectToSession()
+					this.enterToSession()
 					this.sendVerificationImage()
 				}
 			} else {
-				const minSide = Math.min(img.width, img.height)
-				this.verifyImageCanvas.width = minSide
-				this.verifyImageCanvas.height = minSide
-
-				const centerX = img.width / 2
-				const centerY = img.height / 2
-
-				const cropX = centerX - minSide / 2
-				const cropY = centerY - minSide / 2
-
-				this.verifyImageCanvasCtx.drawImage(
+				const imgData = this.handleVerfyImage(
 					img,
-					cropX,
-					cropY,
-					minSide,
-					minSide,
-					0,
-					0,
-					minSide,
-					minSide
-				)
-				let imgdata = this.verifyImageCanvasCtx.getImageData(
-					0,
-					0,
-					minSide,
-					minSide
+					img.width,
+					img.height
 				)
 
-				const resizedCanvas = document.createElement('canvas')
-				const resizedCtx = resizedCanvas.getContext('2d')
-				resizedCanvas.width = 200
-				resizedCanvas.height = 200
-				resizedCtx!.drawImage(this.verifyImageCanvas, 0, 0, 200, 200)
-
-				imgdata = resizedCtx!.getImageData(0, 0, 200, 200)
-				this.toGrayscale(imgdata)
-
-				resizedCtx!.putImageData(imgdata, 0, 0)
+				// resizedCtx!.putImageData(imgdata, 0, 0)
 				// console.log(resizedCanvas.toDataURL())
 				// console.log(this.verifyImageCanvas.toDataURL())
-				// @ts-ignore
-				this.digits = this.predictDigits(imgdata)
-				console.log(this.digits)
+
+				this.predictedDigits = this.predictDigits(imgData)
+				console.log(this.digits, this.predictedDigits)
+				if (
+					JSON.stringify(this.digits) ===
+					JSON.stringify(this.predictedDigits)
+				) {
+					this.verificationStep = false
+					this.reset()
+					this.connectToSession()
+					this.showConnectedStage()
+				}
 			}
 		}
 		img.src = URL.createObjectURL(file)
+	}
+
+	handleVerfyImage(
+		img: OffscreenCanvas | CanvasImageSource,
+		width: number,
+		height: number
+	) {
+		const minSide = Math.min(width, height)
+		const verifyImageCanvas = document.createElement('canvas')
+		const verifyImageCanvasCtx = verifyImageCanvas.getContext('2d')
+		verifyImageCanvas.width = minSide
+		verifyImageCanvas.height = minSide
+
+		const centerX = width / 2
+		const centerY = height / 2
+
+		const cropX = centerX - minSide / 2
+		const cropY = centerY - minSide / 2
+
+		verifyImageCanvasCtx!.drawImage(
+			img,
+			cropX,
+			cropY,
+			minSide,
+			minSide,
+			0,
+			0,
+			minSide,
+			minSide
+		)
+		let imgdata = verifyImageCanvasCtx!.getImageData(0, 0, minSide, minSide)
+
+		const resizedCanvas = document.createElement('canvas')
+		const resizedCtx = resizedCanvas.getContext('2d')
+		resizedCanvas.width = 200
+		resizedCanvas.height = 200
+		resizedCtx!.drawImage(verifyImageCanvas, 0, 0, 200, 200)
+
+		imgdata = resizedCtx!.getImageData(0, 0, 200, 200)
+		this.toGrayscale(imgdata)
+		resizedCanvas.remove()
+		verifyImageCanvas.remove()
+		return imgdata
 	}
 
 	toGrayscale(imageData: ImageData) {
@@ -576,7 +597,7 @@ export class PhoneComponent implements AfterViewInit {
 
 	generateTransformedImage() {
 		const digits = this.getRandomDigits(4)
-
+		this.digits = digits
 		const canvas = this.generateImage(digits)
 		const ctx = canvas.getContext('2d')
 
@@ -602,7 +623,7 @@ export class PhoneComponent implements AfterViewInit {
 					data: { type: 'verify', content: imageURL },
 				},
 				() => {
-					this.verifyStep = true
+					this.verificationStep = true
 					resolve(true)
 				}
 			)

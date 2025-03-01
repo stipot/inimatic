@@ -92,8 +92,6 @@ export class HomePage {
 
 		this.socket.on('follower_data', async (data) => {
 			this.followers.push(data)
-			await this.connect()
-			this.showConnectedStage()
 		})
 
 		this.socket.on('follower_disconnect', async (follower) => {
@@ -123,6 +121,12 @@ export class HomePage {
 		})
 
 		this.socket.on('connection', (data) => {
+			if (data === 'connect') {
+				// await this.connect()
+				this.verificationStep = false
+				this.verificationImage = ''
+				this.showConnectedStage()
+			}
 			this.receiveData(data)
 		})
 	}

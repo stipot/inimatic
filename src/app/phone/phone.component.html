@@ -12,7 +12,7 @@
 	<div id="follower_container" *ngIf="!isInitiator" style="text-align: center;">
 		<div *ngIf="!isConnected">
 			<input type="text" placeholder="Your name" [(ngModel)]="followerName" maxlength="11">
-
+			<p>{{predictedDigits}}</p>
 			<!-- Fallback for iOS PWA -->
 			<input #fileinput type="file" accept="image/*;capture=camera" hidden (change)="handleFile($event)" />
 
@@ -43,7 +43,6 @@
 				<ion-icon slot="start" name="close"></ion-icon>
 				Stop scan
 			</ion-button>
-			<p>{{digits}}</p>
 		</div>
 	</div>
 	<div class="connected_stage" *ngIf="isConnected">
