@@ -17,16 +17,17 @@
 			<input #fileinput type="file" accept="image/*;capture=camera" hidden (change)="handleFile($event)" />
 
 			<!-- Trigger the file input -->
-			<ion-button expand="full" (click)="captureImage()">
-				<ion-icon slot="start" name="image"></ion-icon>
-				Scan from file
-			</ion-button>
+			<div *ngIf="model">
+				<ion-button expand="full" (click)="captureImage()">
+					<ion-icon slot="start" name="image"></ion-icon>
+					Scan from file
+				</ion-button>
 
-			<ion-button expand="full" (click)="startScan()">
-				<ion-icon slot="start" name="camera"></ion-icon>
-				Scan from camera
-			</ion-button>
-
+				<ion-button expand="full" (click)="startScan()">
+					<ion-icon slot="start" name="camera"></ion-icon>
+					Scan from camera
+				</ion-button>
+			</div>
 			<ion-button expand="full" (click)="reset()" color="warning" *ngIf="scanResult">
 				<ion-icon slot="start" name="refresh"></ion-icon>
 				Reset

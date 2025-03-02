@@ -112,22 +112,19 @@ export class PhoneComponent implements AfterViewInit {
 		})
 
 		this.socket.on('connection', (data) => {
-			if (data === 'connect') {
-				this.reset()
-				return this.showConnectedStage()
-			}
-
 			this.receiveData(data)
 		})
 
-		if (this.route.snapshot.queryParamMap.get('sessionId')) {
-			this.sessionID = this.route.snapshot.queryParamMap.get('sessionId')!
-			this.connectToSession()
-		}
-
-		tf.loadGraphModel('assets/model/model.json').then(
-			(tfModel) => (this.model = tfModel)
-		)
+		tf.loadGraphModel('assets/model/model.json').then((tfModel) => {
+			this.model = tfModel
+			if (this.route.snapshot.queryParamMap.get('sessionId')) {
+				this.sessionID =
+					this.route.snapshot.queryParamMap.get('sessionId')!
+				this.enterToSession()
+				this.sendVerifImage()
+				this.startScan()
+			}
+		})
 	}
 
 	getDeviceId() {
@@ -198,11 +195,7 @@ export class PhoneComponent implements AfterViewInit {
 	}
 
 	connectToSession() {
-		this.socket.emit('conductor', {
-			sessionId: this.sessionID,
-			isInitiator: this.isInitiator,
-			data: 'connect',
-		})
+		this.socket.emit('session_connect', this.sessionID)
 	}
 
 	showConnectedStage() {
@@ -272,7 +265,6 @@ export class PhoneComponent implements AfterViewInit {
 				)
 
 				this.predictedDigits = this.predictDigits(imageData)
-				console.log(this.digits, this.predictedDigits)
 				if (
 					JSON.stringify(this.digits) ===
 					JSON.stringify(this.predictedDigits)
@@ -294,8 +286,6 @@ export class PhoneComponent implements AfterViewInit {
 				)
 
 				if (code && !this.scanResult) {
-					console.log(123)
-
 					this.scanResult = code.data
 					this.sessionID = this.scanResult!.split('sessionId=')[1]
 					this.enterToSession()

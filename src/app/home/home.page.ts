@@ -90,8 +90,11 @@ export class HomePage {
 			this.qrData = this.url + `?sessionId=${this.sessionID}`
 		})
 
-		this.socket.on('follower_data', async (data) => {
+		this.socket.on('connect_follower', async (data) => {
 			this.followers.push(data)
+			this.verificationStep = false
+			this.verificationImage = ''
+			this.showConnectedStage()
 			console.log(data)
 		})
 
@@ -122,12 +125,6 @@ export class HomePage {
 		})
 
 		this.socket.on('connection', (data) => {
-			if (data === 'connect') {
-				// await this.connect()
-				this.verificationStep = false
-				this.verificationImage = ''
-				this.showConnectedStage()
-			}
 			this.receiveData(data)
 		})
 	}
