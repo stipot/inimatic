@@ -102,7 +102,21 @@ io.on('connect', (socket) => {
 
 		await redisClient.set(sessionId, JSON.stringify(sessionData))
 
-		io.to(sessionData.initiatorSocketId).emit('follower_data', followerName)
+		// io.to(sessionData.initiatorSocketId).emit('follower_data', followerName)
+	})
+
+	socket.on('session_connect', async (sessionId) => {
+		// if (data.isInitiator) return
+		console.log(sessionId)
+
+		const sessionData: SessionData = JSON.parse(
+			(await redisClient.get(sessionId))!
+		)
+		const followerName = sessionData.followers[socket.id]
+		io.to(sessionData.initiatorSocketId).emit(
+			'connect_follower',
+			followerName
+		)
 	})
 
 	socket.on('disconnect_follower', async (data) => {
