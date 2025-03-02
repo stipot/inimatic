@@ -25,7 +25,7 @@ import { QRCodeModule } from 'angularx-qrcode'
 import { io, Socket } from 'socket.io-client'
 import { environment } from 'src/environments/environment'
 import streamSaver from 'streamsaver'
-import { Data, TransferFileData, VerifyData, SendMessageData } from 'src/types'
+import { Data, TransferFileData, SendMessageData } from 'src/types'
 import * as tf from '@tensorflow/tfjs'
 
 @Component({
@@ -263,28 +263,50 @@ export class PhoneComponent implements AfterViewInit {
 				this.canvasElement.width,
 				this.canvasElement.height
 			)
-			const code = jsQR(
-				imageData.data,
-				imageData.width,
-				imageData.height,
-				{
-					inversionAttempts: 'dontInvert',
-				}
-			)
 
-			if (code) {
-				this.stopScan()
-				this.scanActive = false
-				this.scanResult = code.data
-				this.sessionID = this.scanResult!.split('sessionId=')[1]
-				// this.connectToSession()
-				this.sendVerificationImage()
-			} else {
-				if (this.scanActive) {
-					this.animationRequest = requestAnimationFrame(
-						this.scan.bind(this)
-					)
+			if (this.verificationStep) {
+				const imageData = this.handleVerifImage(
+					this.videoElement,
+					this.videoElement.videoWidth,
+					this.videoElement.videoHeight
+				)
+
+				this.predictedDigits = this.predictDigits(imageData)
+				console.log(this.digits, this.predictedDigits)
+				if (
+					JSON.stringify(this.digits) ===
+					JSON.stringify(this.predictedDigits)
+				) {
+					this.stopScan()
+					this.verificationStep = false
+					this.reset()
+					this.connectToSession()
+					this.showConnectedStage()
 				}
+			} else {
+				const code = jsQR(
+					imageData.data,
+					imageData.width,
+					imageData.height,
+					{
+						inversionAttempts: 'dontInvert',
+					}
+				)
+
+				if (code && !this.scanResult) {
+					console.log(123)
+
+					this.scanResult = code.data
+					this.sessionID = this.scanResult!.split('sessionId=')[1]
+					this.enterToSession()
+					this.sendVerifImage()
+				}
+			}
+
+			if (this.scanActive) {
+				this.animationRequest = requestAnimationFrame(
+					this.scan.bind(this)
+				)
 			}
 		} else {
 			this.animationRequest = requestAnimationFrame(this.scan.bind(this))
@@ -306,7 +328,6 @@ export class PhoneComponent implements AfterViewInit {
 
 		const img = new Image()
 		img.onload = () => {
-			console.log('loaded')
 			if (!this.verificationStep) {
 				this.canvasContext.drawImage(
 					img,
@@ -334,10 +355,10 @@ export class PhoneComponent implements AfterViewInit {
 					this.scanResult = code.data
 					this.sessionID = this.scanResult!.split('sessionId=')[1]
 					this.enterToSession()
-					this.sendVerificationImage()
+					this.sendVerifImage()
 				}
 			} else {
-				const imgData = this.handleVerfyImage(
+				const imgData = this.handleVerifImage(
 					img,
 					img.width,
 					img.height
@@ -363,16 +384,16 @@ export class PhoneComponent implements AfterViewInit {
 		img.src = URL.createObjectURL(file)
 	}
 
-	handleVerfyImage(
+	handleVerifImage(
 		img: OffscreenCanvas | CanvasImageSource,
 		width: number,
 		height: number
 	) {
 		const minSide = Math.min(width, height)
-		const verifyImageCanvas = document.createElement('canvas')
-		const verifyImageCanvasCtx = verifyImageCanvas.getContext('2d')
-		verifyImageCanvas.width = minSide
-		verifyImageCanvas.height = minSide
+		const verifImageCanvas = document.createElement('canvas')
+		const verifImageCanvasCtx = verifImageCanvas.getContext('2d')
+		verifImageCanvas.width = minSide
+		verifImageCanvas.height = minSide
 
 		const centerX = width / 2
 		const centerY = height / 2
@@ -380,7 +401,7 @@ export class PhoneComponent implements AfterViewInit {
 		const cropX = centerX - minSide / 2
 		const cropY = centerY - minSide / 2
 
-		verifyImageCanvasCtx!.drawImage(
+		verifImageCanvasCtx!.drawImage(
 			img,
 			cropX,
 			cropY,
@@ -391,19 +412,19 @@ export class PhoneComponent implements AfterViewInit {
 			minSide,
 			minSide
 		)
-		let imgdata = verifyImageCanvasCtx!.getImageData(0, 0, minSide, minSide)
+		let imgData = verifImageCanvasCtx!.getImageData(0, 0, minSide, minSide)
 
 		const resizedCanvas = document.createElement('canvas')
 		const resizedCtx = resizedCanvas.getContext('2d')
 		resizedCanvas.width = 200
 		resizedCanvas.height = 200
-		resizedCtx!.drawImage(verifyImageCanvas, 0, 0, 200, 200)
+		resizedCtx!.drawImage(verifImageCanvas, 0, 0, 200, 200)
 
-		imgdata = resizedCtx!.getImageData(0, 0, 200, 200)
-		this.toGrayscale(imgdata)
+		imgData = resizedCtx!.getImageData(0, 0, 200, 200)
+		this.toGrayscale(imgData)
 		resizedCanvas.remove()
-		verifyImageCanvas.remove()
-		return imgdata
+		verifImageCanvas.remove()
+		return imgData
 	}
 
 	toGrayscale(imageData: ImageData) {
@@ -612,7 +633,7 @@ export class PhoneComponent implements AfterViewInit {
 		return canvas.toDataURL('image/jpeg')
 	}
 
-	async sendVerificationImage() {
+	async sendVerifImage() {
 		const imageURL = this.generateTransformedImage()
 		await new Promise((resolve) => {
 			this.socket.emit(

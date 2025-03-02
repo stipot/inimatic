@@ -24,7 +24,7 @@ import {
 	Data,
 	TransferFileData,
 	SendMessageData,
-	VerifyData,
+	VerificationData,
 	ConfirmationData,
 } from 'src/types'
 
@@ -92,6 +92,7 @@ export class HomePage {
 
 		this.socket.on('follower_data', async (data) => {
 			this.followers.push(data)
+			console.log(data)
 		})
 
 		this.socket.on('follower_disconnect', async (follower) => {
@@ -255,7 +256,7 @@ export class HomePage {
 		this.messagesLog = this.messagesLog.concat([receivedData.message])
 	}
 
-	receiveVerificationImage(receivedData: VerifyData) {
+	receiveVerificationImage(receivedData: VerificationData) {
 		this.verificationStep = true
 		this.verificationImage = receivedData.content
 		this.cdr.detectChanges()

@@ -12,7 +12,7 @@ export type SendMessageData = {
 	message: string
 }
 
-export type VerifyData = {
+export type VerificationData = {
 	type: 'verify'
 	content: string
 }
