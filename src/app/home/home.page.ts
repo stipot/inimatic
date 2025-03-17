@@ -170,6 +170,7 @@ export class HomePage {
 		const target = event.target as HTMLInputElement
 		if (!target.files || target.files.length === 0) return
 		this.file = target.files[0]
+		this.transferFile()
 	}
 
 	async transferFile() {

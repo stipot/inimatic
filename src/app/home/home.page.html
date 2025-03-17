@@ -13,14 +13,14 @@
 		<div id="initiator_container" *ngIf="isInitiator">
 			<div class="instruction">
 				<div>
-					<strong>1. Open Inimatic application on your phone</strong>
+					<strong>1. Open camera or Inimatic application on your phone</strong>
 					<p>and point it to the screen</p>
 				</div>
 				<p>{{sessionID}}</p>
 				@if (verificationStep) {
-					<img [src]="verificationImage" alt="verification image" [width]="200">
+				<img [src]="verificationImage" alt="verification image" [width]="200">
 				} @else {
-					<qrcode [qrdata]="qrData" [width]="200" [errorCorrectionLevel]="'M'" *ngIf="qrData != ''"></qrcode>
+				<qrcode [qrdata]="qrData" [width]="200" [errorCorrectionLevel]="'M'" *ngIf="qrData != ''"></qrcode>
 				}
 
 			</div>
@@ -34,7 +34,7 @@
 						<ion-card class="follower_device">
 							<ion-card-title>{{follower}}</ion-card-title>
 							<button (click)="disconnectDevice(follower)">
-								<ion-icon name="close" ></ion-icon>
+								<ion-icon name="close"></ion-icon>
 							</button>
 						</ion-card>
 					</li>
@@ -43,7 +43,7 @@
 
 			<div class="functional">
 				<div class="transfer_file_form_wrapper">
-					<form class="transfer_file_form">
+					<form class="transfer_file_form" id="transfer_file_form">
 						<input type="file" (change)="uploadFile($event)" />
 						<ion-button type="submit" (click)="transferFile()">
 							Transfer file
@@ -52,12 +52,13 @@
 				</div>
 
 				<div>
-					<input type="text" [(ngModel)]="message" placeholder="Enter message to send" />
+					<input type="text" [(ngModel)]="message" placeholder="Enter message to send"
+						(keyup.enter)="sendMessage()" />
 					<ion-button (click)="sendMessage()">Send Message</ion-button>
 				</div>
 				<div class="message_log">
 					<p *ngIf="messagesLog.length > 0">Messages:</p>
-					<p *ngFor="let messageL of messagesLog" class="selectable">{{messageL}}</p>
+					<p *ngFor="let messageL of messagesLog.slice(-3).reverse()" class="selectable">{{messageL}}</p>
 				</div>
 			</div>
 		</div>
