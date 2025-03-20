@@ -75,6 +75,7 @@ export class PhoneComponent implements AfterViewInit {
 	verificationStep = false
 	predictedDigits: string[] = []
 	digits: string[] = []
+	croppedImage = ''
 
 	constructor(
 		private plt: Platform,
@@ -267,16 +268,18 @@ export class PhoneComponent implements AfterViewInit {
 					this.videoElement.videoHeight
 				)
 
-				this.predictedDigits = this.predictDigits(imageData)
-				if (
-					JSON.stringify(this.digits) ===
-					JSON.stringify(this.predictedDigits)
-				) {
-					this.stopScan()
-					this.verificationStep = false
-					this.reset()
-					this.connectToSession()
-					this.showConnectedStage()
+				if (imageData) {
+					this.predictedDigits = this.predictDigits(imageData)
+					if (
+						JSON.stringify(this.digits) ===
+						JSON.stringify(this.predictedDigits)
+					) {
+						this.stopScan()
+						this.verificationStep = false
+						this.reset()
+						this.connectToSession()
+						this.showConnectedStage()
+					}
 				}
 			} else {
 				const code = jsQR(
@@ -356,17 +359,18 @@ export class PhoneComponent implements AfterViewInit {
 					img.width,
 					img.height
 				)
-
-				this.predictedDigits = this.predictDigits(imgData)
-				console.log(this.digits, this.predictedDigits)
-				if (
-					JSON.stringify(this.digits) ===
-					JSON.stringify(this.predictedDigits)
-				) {
-					this.verificationStep = false
-					this.reset()
-					this.connectToSession()
-					this.showConnectedStage()
+				if (imgData) {
+					this.predictedDigits = this.predictDigits(imgData)
+					console.log(this.digits, this.predictedDigits)
+					if (
+						JSON.stringify(this.digits) ===
+						JSON.stringify(this.predictedDigits)
+					) {
+						this.verificationStep = false
+						this.reset()
+						this.connectToSession()
+						this.showConnectedStage()
+					}
 				}
 			}
 		}
@@ -383,12 +387,6 @@ export class PhoneComponent implements AfterViewInit {
 
 		verifImageCanvas.width = width / 1.5
 		verifImageCanvas.height = height / 1.5
-		console.log(
-			verifImageCanvas.width,
-			verifImageCanvas.height,
-			height / 1.5,
-			width
-		)
 		verifImageCanvasCtx!.drawImage(img, 0, 0, width / 1.5, height / 1.5)
 
 		let imgData = verifImageCanvasCtx!.getImageData(
@@ -402,21 +400,29 @@ export class PhoneComponent implements AfterViewInit {
 		console.log(rect, verifImageCanvas.width, verifImageCanvas.height)
 		const cropCanvas = document.createElement('canvas')
 		const cropCanvasCtx = cropCanvas.getContext('2d')
-		if (rect) {
-			cropCanvas.width = rect.width
-			cropCanvas.height = rect.height
-			cropCanvasCtx!.drawImage(
-				verifImageCanvas,
-				rect.minX,
-				rect.minY,
-				rect.width,
-				rect.height,
-				0,
-				0,
-				rect.width,
-				rect.height
-			)
-		}
+		if (
+			!rect ||
+			(rect.width < 100 &&
+				rect?.height < 100 &&
+				Math.abs(rect.width - rect.height) > (rect.width / 100) * 10)
+		)
+			return null
+
+		cropCanvas.width = rect.width
+		cropCanvas.height = rect.height
+		cropCanvasCtx!.drawImage(
+			verifImageCanvas,
+			rect.minX,
+			rect.minY,
+			rect.width,
+			rect.height,
+			0,
+			0,
+			rect.width,
+			rect.height
+		)
+
+		this.croppedImage = cropCanvas.toDataURL()
 		// else {
 		// 	const minSide = Math.min(width, height)
 		// 	const centerX = width / 2
@@ -679,8 +685,8 @@ export class PhoneComponent implements AfterViewInit {
 	}
 
 	cropImage(imgData: ImageData) {
-		const threshold = 50
-		const redPixels: Point[] = []
+		const threshold = 100
+		const redPixelsSet = new Set<string>()
 		const data = imgData.data
 
 		for (let y = 0; y < imgData.height; y++) {
@@ -690,8 +696,8 @@ export class PhoneComponent implements AfterViewInit {
 				const g = data[index + 1]
 				const b = data[index + 2]
 
-				if (r < threshold && g > threshold && b < threshold) {
-					redPixels.push({ x, y })
+				if (r < threshold && g < threshold && b > threshold) {
+					redPixelsSet.add(`${x},${y}`)
 				}
 			}
 		}
@@ -699,43 +705,47 @@ export class PhoneComponent implements AfterViewInit {
 		const contours = []
 		const visited = new Set<string>()
 
-		function dfs(x: number, y: number, contour: Point[]) {
+		for (const pixelStr of redPixelsSet) {
+			const [x, y] = pixelStr.split(',').map(Number)
 			const key = `${x},${y}`
-			if (visited.has(key)) return
-			visited.add(key)
 
-			contour.push({ x, y })
-
-			const directions = [
-				{ dx: -1, dy: 0 },
-				{ dx: 1, dy: 0 },
-				{ dx: 0, dy: -1 },
-				{ dx: 0, dy: 1 },
-			]
-
-			for (const dir of directions) {
-				const nx = x + dir.dx
-				const ny = y + dir.dy
-				const nKey = `${nx},${ny}`
-
-				if (
-					nx >= 0 &&
-					nx < imgData.width &&
-					ny >= 0 &&
-					ny < imgData.height &&
-					redPixels.some((p) => p.x === nx && p.y === ny) &&
-					!visited.has(nKey)
-				) {
-					dfs(nx, ny, contour)
-				}
-			}
-		}
-
-		for (const pixel of redPixels) {
-			const key = `${pixel.x},${pixel.y}`
 			if (!visited.has(key)) {
 				const contour: Point[] = []
-				dfs(pixel.x, pixel.y, contour)
+				const stack: [number, number][] = [[x, y]]
+				visited.add(key)
+
+				while (stack.length > 0) {
+					const [currentX, currentY] = stack.pop()!
+					contour.push({ x: currentX, y: currentY })
+
+					// Проверяем всех 4 соседей
+					const directions = [
+						{ dx: -1, dy: 0 },
+						{ dx: 1, dy: 0 },
+						{ dx: 0, dy: -1 },
+						{ dx: 0, dy: 1 },
+					]
+
+					for (const dir of directions) {
+						const nx = currentX + dir.dx
+						const ny = currentY + dir.dy
+						const neighborKey = `${nx},${ny}`
+
+						// Проверяем границы и принадлежность к redPixels
+						if (
+							nx >= 0 &&
+							nx < imgData.width &&
+							ny >= 0 &&
+							ny < imgData.height &&
+							redPixelsSet.has(neighborKey) &&
+							!visited.has(neighborKey)
+						) {
+							visited.add(neighborKey)
+							stack.push([nx, ny])
+						}
+					}
+				}
+
 				contours.push(contour)
 			}
 		}
