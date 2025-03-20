@@ -17,7 +17,7 @@ services:
             dockerfile: ./deployment/backend.Dockerfile
         restart: always
         environment:
-            -PORT=3031
+            - PORT=3031
         ports:
             - "3031:3031"
 
