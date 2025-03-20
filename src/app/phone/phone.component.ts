@@ -27,7 +27,10 @@ import { environment } from 'src/environments/environment'
 import streamSaver from 'streamsaver'
 import { Data, TransferFileData, SendMessageData } from 'src/types'
 import * as tf from '@tensorflow/tfjs'
-
+interface Point {
+	x: number
+	y: number
+}
 @Component({
 	selector: 'app-phone',
 	templateUrl: './phone.component.html',
@@ -354,10 +357,6 @@ export class PhoneComponent implements AfterViewInit {
 					img.height
 				)
 
-				// resizedCtx!.putImageData(imgdata, 0, 0)
-				// console.log(resizedCanvas.toDataURL())
-				// console.log(this.verifyImageCanvas.toDataURL())
-
 				this.predictedDigits = this.predictDigits(imgData)
 				console.log(this.digits, this.predictedDigits)
 				if (
@@ -379,41 +378,79 @@ export class PhoneComponent implements AfterViewInit {
 		width: number,
 		height: number
 	) {
-		const minSide = Math.min(width, height)
 		const verifImageCanvas = document.createElement('canvas')
 		const verifImageCanvasCtx = verifImageCanvas.getContext('2d')
-		verifImageCanvas.width = minSide
-		verifImageCanvas.height = minSide
 
-		const centerX = width / 2
-		const centerY = height / 2
-
-		const cropX = centerX - minSide / 2
-		const cropY = centerY - minSide / 2
-
-		verifImageCanvasCtx!.drawImage(
-			img,
-			cropX,
-			cropY,
-			minSide,
-			minSide,
-			0,
-			0,
-			minSide,
-			minSide
+		verifImageCanvas.width = width / 1.5
+		verifImageCanvas.height = height / 1.5
+		console.log(
+			verifImageCanvas.width,
+			verifImageCanvas.height,
+			height / 1.5,
+			width
 		)
-		let imgData = verifImageCanvasCtx!.getImageData(0, 0, minSide, minSide)
+		verifImageCanvasCtx!.drawImage(img, 0, 0, width / 1.5, height / 1.5)
+
+		let imgData = verifImageCanvasCtx!.getImageData(
+			0,
+			0,
+			verifImageCanvas.width,
+			verifImageCanvas.height
+		)
+
+		const rect = this.cropImage(imgData)
+		console.log(rect, verifImageCanvas.width, verifImageCanvas.height)
+		const cropCanvas = document.createElement('canvas')
+		const cropCanvasCtx = cropCanvas.getContext('2d')
+		if (rect) {
+			cropCanvas.width = rect.width
+			cropCanvas.height = rect.height
+			cropCanvasCtx!.drawImage(
+				verifImageCanvas,
+				rect.minX,
+				rect.minY,
+				rect.width,
+				rect.height,
+				0,
+				0,
+				rect.width,
+				rect.height
+			)
+		}
+		// else {
+		// 	const minSide = Math.min(width, height)
+		// 	const centerX = width / 2
+		// 	const centerY = height / 1.5 / 2
+		// 	const cropX = centerX - minSide / 2
+		// 	const cropY = centerY - minSide / 2
+		// 	verifImageCanvas.width = minSide
+		// 	verifImageCanvas.height = minSide
+		// 	verifImageCanvasCtx!.drawImage(
+		// 		img,
+		// 		cropX,
+		// 		cropY,
+		// 		minSide,
+		// 		minSide,
+		// 		0,
+		// 		0,
+		// 		minSide,
+		// 		minSide
+		// 	)
+		// }
 
 		const resizedCanvas = document.createElement('canvas')
 		const resizedCtx = resizedCanvas.getContext('2d')
 		resizedCanvas.width = 200
 		resizedCanvas.height = 200
-		resizedCtx!.drawImage(verifImageCanvas, 0, 0, 200, 200)
+		resizedCtx!.drawImage(cropCanvas, 0, 0, 200, 200)
+		// console.log(resizedCanvas.toDataURL('image/jpeg'))
+		// console.log(this.canvasElement.toDataURL('image/jpeg'))
 
 		imgData = resizedCtx!.getImageData(0, 0, 200, 200)
 		this.toGrayscale(imgData)
 		resizedCanvas.remove()
 		verifImageCanvas.remove()
+		cropCanvas.remove()
 		return imgData
 	}
 
@@ -639,5 +676,89 @@ export class PhoneComponent implements AfterViewInit {
 				}
 			)
 		})
+	}
+
+	cropImage(imgData: ImageData) {
+		const threshold = 50
+		const redPixels: Point[] = []
+		const data = imgData.data
+
+		for (let y = 0; y < imgData.height; y++) {
+			for (let x = 0; x < imgData.width; x++) {
+				const index = (y * imgData.width + x) * 4
+				const r = data[index]
+				const g = data[index + 1]
+				const b = data[index + 2]
+
+				if (r < threshold && g > threshold && b < threshold) {
+					redPixels.push({ x, y })
+				}
+			}
+		}
+
+		const contours = []
+		const visited = new Set<string>()
+
+		function dfs(x: number, y: number, contour: Point[]) {
+			const key = `${x},${y}`
+			if (visited.has(key)) return
+			visited.add(key)
+
+			contour.push({ x, y })
+
+			const directions = [
+				{ dx: -1, dy: 0 },
+				{ dx: 1, dy: 0 },
+				{ dx: 0, dy: -1 },
+				{ dx: 0, dy: 1 },
+			]
+
+			for (const dir of directions) {
+				const nx = x + dir.dx
+				const ny = y + dir.dy
+				const nKey = `${nx},${ny}`
+
+				if (
+					nx >= 0 &&
+					nx < imgData.width &&
+					ny >= 0 &&
+					ny < imgData.height &&
+					redPixels.some((p) => p.x === nx && p.y === ny) &&
+					!visited.has(nKey)
+				) {
+					dfs(nx, ny, contour)
+				}
+			}
+		}
+
+		for (const pixel of redPixels) {
+			const key = `${pixel.x},${pixel.y}`
+			if (!visited.has(key)) {
+				const contour: Point[] = []
+				dfs(pixel.x, pixel.y, contour)
+				contours.push(contour)
+			}
+		}
+
+		let largestRectangle = null
+		let maxArea = 0
+
+		for (const contour of contours) {
+			const minX = Math.min(...contour.map((p) => p.x))
+			const maxX = Math.max(...contour.map((p) => p.x))
+			const minY = Math.min(...contour.map((p) => p.y))
+			const maxY = Math.max(...contour.map((p) => p.y))
+
+			const width = maxX - minX
+			const height = maxY - minY
+			const area = width * height
+
+			if (area > maxArea) {
+				maxArea = area
+				largestRectangle = { minX, minY, width, height }
+			}
+		}
+
+		return largestRectangle
 	}
 }
