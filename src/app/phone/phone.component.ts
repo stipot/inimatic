@@ -59,6 +59,12 @@ export class PhoneComponent implements AfterViewInit {
 	scanActive = false
 	scanResult: string | undefined = undefined
 	animationRequest = 0
+	verifImageCanvas = document.createElement('canvas')
+	verifImageCanvasCtx = this.verifImageCanvas.getContext('2d')
+	cropCanvas = document.createElement('canvas')
+	cropCanvasCtx = this.cropCanvas.getContext('2d')
+	resizedCanvas = document.createElement('canvas')
+	resizedCtx = this.resizedCanvas.getContext('2d')
 
 	sessionID = '-'
 	followerName = this.getDeviceId()
@@ -382,36 +388,45 @@ export class PhoneComponent implements AfterViewInit {
 		width: number,
 		height: number
 	) {
-		const verifImageCanvas = document.createElement('canvas')
-		const verifImageCanvasCtx = verifImageCanvas.getContext('2d')
-
-		verifImageCanvas.width = width / 1.5
-		verifImageCanvas.height = height / 1.5
-		verifImageCanvasCtx!.drawImage(img, 0, 0, width / 1.5, height / 1.5)
-
-		let imgData = verifImageCanvasCtx!.getImageData(
+		this.verifImageCanvas.width = width / 1.5
+		this.verifImageCanvas.height = height / 1.5
+		this.verifImageCanvasCtx!.drawImage(
+			img,
 			0,
 			0,
-			verifImageCanvas.width,
-			verifImageCanvas.height
+			width / 1.5,
+			height / 1.5
+		)
+
+		let imgData = this.verifImageCanvasCtx!.getImageData(
+			0,
+			0,
+			this.verifImageCanvas.width,
+			this.verifImageCanvas.height
 		)
 
 		const rect = this.cropImage(imgData)
-		console.log(rect, verifImageCanvas.width, verifImageCanvas.height)
-		const cropCanvas = document.createElement('canvas')
-		const cropCanvasCtx = cropCanvas.getContext('2d')
+		// console.log(rect, verifImageCanvas.width, verifImageCanvas.height)
+		if (rect)
+			console.log(
+				Math.abs(rect.width - rect.height),
+				(Math.min(rect.width, rect.height) / 100) * 5,
+				rect.width,
+				rect.height
+			)
+
 		if (
 			!rect ||
-			(rect.width < 100 &&
-				rect?.height < 100 &&
-				Math.abs(rect.width - rect.height) > (rect.width / 100) * 10)
+			(rect.width < 10 && rect?.height < 10) ||
+			Math.abs(rect.width - rect.height) >
+				(Math.min(rect.width, rect.height) / 100) * 5
 		)
 			return null
 
-		cropCanvas.width = rect.width
-		cropCanvas.height = rect.height
-		cropCanvasCtx!.drawImage(
-			verifImageCanvas,
+		this.cropCanvas.width = rect.width
+		this.cropCanvas.height = rect.height
+		this.cropCanvasCtx!.drawImage(
+			this.verifImageCanvas,
 			rect.minX,
 			rect.minY,
 			rect.width,
@@ -421,42 +436,17 @@ export class PhoneComponent implements AfterViewInit {
 			rect.width,
 			rect.height
 		)
+		// this.croppedImage = this.cropCanvas.toDataURL()
 
-		this.croppedImage = cropCanvas.toDataURL()
-		// else {
-		// 	const minSide = Math.min(width, height)
-		// 	const centerX = width / 2
-		// 	const centerY = height / 1.5 / 2
-		// 	const cropX = centerX - minSide / 2
-		// 	const cropY = centerY - minSide / 2
-		// 	verifImageCanvas.width = minSide
-		// 	verifImageCanvas.height = minSide
-		// 	verifImageCanvasCtx!.drawImage(
-		// 		img,
-		// 		cropX,
-		// 		cropY,
-		// 		minSide,
-		// 		minSide,
-		// 		0,
-		// 		0,
-		// 		minSide,
-		// 		minSide
-		// 	)
-		// }
+		this.resizedCanvas.width = 200
+		this.resizedCanvas.height = 200
+		this.resizedCtx!.drawImage(this.cropCanvas, 0, 0, 200, 200)
 
-		const resizedCanvas = document.createElement('canvas')
-		const resizedCtx = resizedCanvas.getContext('2d')
-		resizedCanvas.width = 200
-		resizedCanvas.height = 200
-		resizedCtx!.drawImage(cropCanvas, 0, 0, 200, 200)
-		// console.log(resizedCanvas.toDataURL('image/jpeg'))
-		// console.log(this.canvasElement.toDataURL('image/jpeg'))
-
-		imgData = resizedCtx!.getImageData(0, 0, 200, 200)
+		imgData = this.resizedCtx!.getImageData(0, 0, 200, 200)
 		this.toGrayscale(imgData)
-		resizedCanvas.remove()
-		verifImageCanvas.remove()
-		cropCanvas.remove()
+		this.resizedCtx!.putImageData(imgData, 0, 0)
+		this.croppedImage = this.resizedCanvas.toDataURL()
+
 		return imgData
 	}
 
@@ -686,7 +676,7 @@ export class PhoneComponent implements AfterViewInit {
 
 	cropImage(imgData: ImageData) {
 		const threshold = 100
-		const redPixelsSet = new Set<string>()
+		const pixelsSet = new Set<string>()
 		const data = imgData.data
 
 		for (let y = 0; y < imgData.height; y++) {
@@ -697,7 +687,7 @@ export class PhoneComponent implements AfterViewInit {
 				const b = data[index + 2]
 
 				if (r < threshold && g < threshold && b > threshold) {
-					redPixelsSet.add(`${x},${y}`)
+					pixelsSet.add(`${x},${y}`)
 				}
 			}
 		}
@@ -705,7 +695,7 @@ export class PhoneComponent implements AfterViewInit {
 		const contours = []
 		const visited = new Set<string>()
 
-		for (const pixelStr of redPixelsSet) {
+		for (const pixelStr of pixelsSet) {
 			const [x, y] = pixelStr.split(',').map(Number)
 			const key = `${x},${y}`
 
@@ -718,7 +708,6 @@ export class PhoneComponent implements AfterViewInit {
 					const [currentX, currentY] = stack.pop()!
 					contour.push({ x: currentX, y: currentY })
 
-					// Проверяем всех 4 соседей
 					const directions = [
 						{ dx: -1, dy: 0 },
 						{ dx: 1, dy: 0 },
@@ -731,13 +720,12 @@ export class PhoneComponent implements AfterViewInit {
 						const ny = currentY + dir.dy
 						const neighborKey = `${nx},${ny}`
 
-						// Проверяем границы и принадлежность к redPixels
 						if (
 							nx >= 0 &&
 							nx < imgData.width &&
 							ny >= 0 &&
 							ny < imgData.height &&
-							redPixelsSet.has(neighborKey) &&
+							pixelsSet.has(neighborKey) &&
 							!visited.has(neighborKey)
 						) {
 							visited.add(neighborKey)
@@ -768,7 +756,6 @@ export class PhoneComponent implements AfterViewInit {
 				largestRectangle = { minX, minY, width, height }
 			}
 		}
-
 		return largestRectangle
 	}
 }
