@@ -18,9 +18,9 @@
 				</div>
 				<p>{{sessionID}}</p>
 				@if (verificationStep) {
-					<img [src]="verificationImage" alt="verification image" [width]="200" [ngStyle]="{border: '7px solid blue', padding: '10px'}">
+					<img [src]="verificationImage" alt="verification image" [width]="200" [ngStyle]="{border: '7px solid blue'}">
 				} @else {
-					<qrcode [qrdata]="qrData" [width]="200" [errorCorrectionLevel]="'M'" *ngIf="qrData != ''"></qrcode>
+					<qrcode [qrdata]="qrData" [width]="220" [errorCorrectionLevel]="'M'" *ngIf="qrData != ''"></qrcode>
 				}
 
 			</div>
