@@ -32,7 +32,13 @@
 				<ion-icon slot="start" name="refresh"></ion-icon>
 				Reset
 			</ion-button>
-
+			<ion-list *ngIf="scanActive">
+				<ion-item>
+				  <ion-select aria-label="cameras" placeholder="Select camera" [(ngModel)]="deviceId" (ionChange)="restartScan()">
+					<ion-select-option *ngFor="let device of devices | keyvalue" value="{{device.key}}">{{device.value}}</ion-select-option>
+				  </ion-select>
+				</ion-item>
+			  </ion-list>
 			<!-- Shows our camera stream -->
 			<video playsinline autoplay #video width="40%"></video>
 

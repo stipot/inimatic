@@ -20,6 +20,10 @@ import {
 	IonContent,
 	IonButton,
 	IonIcon,
+	IonList,
+	IonItem,
+	IonSelect,
+	IonSelectOption,
 } from '@ionic/angular/standalone'
 import { QRCodeModule } from 'angularx-qrcode'
 import { io, Socket } from 'socket.io-client'
@@ -37,6 +41,10 @@ interface Point {
 	styleUrls: ['./phone.component.scss'],
 	standalone: true,
 	imports: [
+		IonItem,
+		IonList,
+		IonSelect,
+		IonSelectOption,
 		IonHeader,
 		IonToolbar,
 		IonTitle,
@@ -82,6 +90,8 @@ export class PhoneComponent implements AfterViewInit {
 	predictedDigits: string[] = []
 	digits: string[] = []
 	croppedImage = ''
+	devices: { [key: string]: string } = {}
+	deviceId = localStorage.getItem('scanDeviceId')
 
 	constructor(
 		private plt: Platform,
@@ -230,10 +240,39 @@ export class PhoneComponent implements AfterViewInit {
 		if (this.scanActive) {
 			this.stopScan()
 		}
+
 		// Not working on iOS standalone mode!
-		const stream = await navigator.mediaDevices.getUserMedia({
-			video: { facingMode: 'environment' },
+		let stream = await navigator.mediaDevices.getUserMedia({ video: true })
+
+		if (Object.keys(this.devices).length === 0) {
+			let stream = await navigator.mediaDevices.getUserMedia({
+				video: true,
+			})
+
+			const devices = (
+				await navigator.mediaDevices.enumerateDevices()
+			).filter((device) => device.kind == 'videoinput')
+			devices.forEach((device) => {
+				this.devices[device.deviceId] = device.label
+			})
+
+			const tracks = stream.getTracks()
+			tracks.forEach((track: MediaStreamTrack) => {
+				track.stop()
+			})
+		}
+
+		if (this.deviceId === null) {
+			this.deviceId = Object.keys(this.devices)[
+				Object.keys(this.devices).length - 1
+			]
+		}
+
+		stream = await navigator.mediaDevices.getUserMedia({
+			video: { deviceId: this.deviceId },
 		})
+		console.log(stream.getVideoTracks()[0].getCapabilities())
+
 		this.videoElement.srcObject = stream
 		// Required for Safari
 		// console.log(this.videoElement)
@@ -241,6 +280,12 @@ export class PhoneComponent implements AfterViewInit {
 
 		this.videoElement.play()
 		this.animationRequest = requestAnimationFrame(this.scan.bind(this))
+	}
+
+	restartScan() {
+		localStorage.setItem('scanDeviceId', this.deviceId!)
+		this.stopScan()
+		this.startScan()
 	}
 
 	async scan() {
