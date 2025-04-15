@@ -241,11 +241,9 @@ export class PhoneComponent implements AfterViewInit {
 			this.stopScan()
 		}
 
-		// Not working on iOS standalone mode!
-		let stream = await navigator.mediaDevices.getUserMedia({ video: true })
-
 		if (Object.keys(this.devices).length === 0) {
-			let stream = await navigator.mediaDevices.getUserMedia({
+			// Not working on iOS standalone mode!
+			const stream = await navigator.mediaDevices.getUserMedia({
 				video: true,
 			})
 
@@ -268,7 +266,7 @@ export class PhoneComponent implements AfterViewInit {
 			]
 		}
 
-		stream = await navigator.mediaDevices.getUserMedia({
+		const stream = await navigator.mediaDevices.getUserMedia({
 			video: { deviceId: this.deviceId },
 		})
 		console.log(stream.getVideoTracks()[0].getCapabilities())
