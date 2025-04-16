@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms' // Make sure this import is include
 import { Platform } from '@ionic/angular'
 import jsQR from 'jsqr-es6'
 import { addIcons } from 'ionicons'
-import { close, camera, refresh, image } from 'ionicons/icons'
+import { close, camera, refresh, image, thumbsUpSharp } from 'ionicons/icons'
 import { RouterLinkWithHref } from '@angular/router'
 import {
 	IonHeader,
@@ -65,7 +65,7 @@ export class PhoneComponent implements AfterViewInit {
 	videoElement: any
 	canvasContext: any
 	scanActive = false
-	scanResult: string | undefined = undefined
+	scanResult: string | null = null
 	animationRequest = 0
 	verifImageCanvas = document.createElement('canvas')
 	verifImageCanvasCtx = this.verifImageCanvas.getContext('2d')
@@ -75,6 +75,7 @@ export class PhoneComponent implements AfterViewInit {
 	resizedCtx = this.resizedCanvas.getContext('2d')
 
 	sessionID = '-'
+	isDistribution = false
 	followerName = this.getDeviceId()
 	isInitiator = true
 	isConnected = false
@@ -140,9 +141,17 @@ export class PhoneComponent implements AfterViewInit {
 			if (this.route.snapshot.queryParamMap.get('sessionId')) {
 				this.sessionID =
 					this.route.snapshot.queryParamMap.get('sessionId')!
+				this.isDistribution = Boolean(
+					this.route.snapshot.queryParamMap.get('isDistribution')!
+				)
 				this.enterToSession()
-				this.sendVerifImage()
-				this.startScan()
+				if (this.isDistribution) {
+					this.connectToSession()
+					this.showConnectedStage()
+				} else {
+					this.sendVerifImage()
+					this.startScan()
+				}
 			}
 		})
 	}
@@ -190,7 +199,7 @@ export class PhoneComponent implements AfterViewInit {
 	}
 
 	reset() {
-		this.scanResult = undefined
+		this.scanResult = null
 	}
 
 	stopScan() {
@@ -269,11 +278,9 @@ export class PhoneComponent implements AfterViewInit {
 		const stream = await navigator.mediaDevices.getUserMedia({
 			video: { deviceId: this.deviceId },
 		})
-		console.log(stream.getVideoTracks()[0].getCapabilities())
 
 		this.videoElement.srcObject = stream
 		// Required for Safari
-		// console.log(this.videoElement)
 		this.videoElement.setAttribute('playsinline', true)
 
 		this.videoElement.play()
@@ -342,9 +349,26 @@ export class PhoneComponent implements AfterViewInit {
 
 				if (code && !this.scanResult) {
 					this.scanResult = code.data
-					this.sessionID = this.scanResult!.split('sessionId=')[1]
+					const params = new URLSearchParams(
+						this.scanResult!.split('follower')[1]
+					)
+					this.sessionID = params.get('sessionId')!
+					this.isDistribution = Boolean(params.get('isDistribution')!)
+					console.log(
+						this.scanResult,
+						String(this.sessionID),
+						String(this.isDistribution)
+					)
+
 					this.enterToSession()
-					this.sendVerifImage()
+					if (this.isDistribution) {
+						this.stopScan()
+						this.reset()
+						this.connectToSession()
+						this.showConnectedStage()
+					} else {
+						this.sendVerifImage()
+					}
 				}
 			}
 
@@ -449,14 +473,6 @@ export class PhoneComponent implements AfterViewInit {
 		)
 
 		const rect = this.cropImage(imgData)
-		// console.log(rect, verifImageCanvas.width, verifImageCanvas.height)
-		if (rect)
-			console.log(
-				Math.abs(rect.width - rect.height),
-				(Math.min(rect.width, rect.height) / 100) * 5,
-				rect.width,
-				rect.height
-			)
 
 		if (
 			!rect ||
