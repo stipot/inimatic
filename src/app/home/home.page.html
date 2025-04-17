@@ -10,7 +10,7 @@
 
 <ion-content [fullscreen]="true">
 	<div class="content">
-		<div id="initiator_container" *ngIf="isInitiator">
+		<div id="initiator_container" *ngIf="!isConnected">
 			<div class="instruction">
 				<div>
 					<strong>1. Open Inimatic application on your phone</strong>
@@ -27,21 +27,8 @@
 		</div>
 
 		<div class="connected_stage" *ngIf="isConnected">
-			<div>
-				<h2>Connected devices:</h2>
-				<ul class="follower_list">
-					<li *ngFor="let follower of followers">
-						<ion-card class="follower_device">
-							<ion-card-title>{{follower}}</ion-card-title>
-							<button (click)="disconnectDevice(follower)">
-								<ion-icon name="close" ></ion-icon>
-							</button>
-						</ion-card>
-					</li>
-				</ul>
-			</div>
-
 			<div class="functional">
+				<h2>Connected</h2>
 				<div class="transfer_file_form_wrapper">
 					<form class="transfer_file_form">
 						<input type="file" (change)="uploadFile($event)" />
@@ -55,8 +42,8 @@
 					<input type="text" [(ngModel)]="message" placeholder="Enter message to send" />
 					<ion-button (click)="sendMessage()">Send Message</ion-button>
 				</div>
-				<div class="message_log">
-					<p *ngIf="messagesLog.length > 0">Messages:</p>
+				<div class="message_log" *ngIf="messagesLog.length > 0">
+					<p>Messages:</p>
 					<p *ngFor="let messageL of messagesLog" class="selectable">{{messageL}}</p>
 				</div>
 			</div>

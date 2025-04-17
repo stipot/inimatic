@@ -34,9 +34,9 @@ import {
 	styleUrls: ['home.page.scss'],
 	standalone: true,
 	imports: [
-		IonIcon,
-		IonCardTitle,
-		IonCard,
+		// IonIcon,
+		// IonCardTitle,
+		// IonCard,
 		IonHeader,
 		IonToolbar,
 		IonTitle,
