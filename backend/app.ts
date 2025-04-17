@@ -64,6 +64,7 @@ io.on('connect', (socket) => {
 		let isInitiator = sessionData.initiatorSocketId === socket.id
 		if (isInitiator) {
 			socket.to(sessionId).emit('initiator_disconnect')
+			// delete saved files
 		} else {
 			io.to(sessionData.initiatorSocketId).emit(
 				'follower_disconnect',
@@ -101,8 +102,6 @@ io.on('connect', (socket) => {
 		socket.join(sessionId)
 
 		await redisClient.set(sessionId, JSON.stringify(sessionData))
-
-		// io.to(sessionData.initiatorSocketId).emit('follower_data', followerName)
 	})
 
 	socket.on('session_connect', async (sessionId) => {
@@ -135,14 +134,18 @@ io.on('connect', (socket) => {
 			console.log(socketIds)
 
 			if (socketIds.length === 1) {
-				delete sessionData.followers[socketIds[0]]
+				if (socketIds[0] in sessionData.followers) {
+					delete sessionData.followers[socketIds[0]]
+				}
 				await redisClient.set(sessionId, JSON.stringify(sessionData))
 				const sockets = await io.sockets.fetchSockets()
 				const followerSocket = sockets.filter(
 					(socket) => socket.id === socketIds[0]
 				)[0]
-				followerSocket.leave(sessionId)
-				followerSocket.emit('initiator_disconnect')
+				if (followerSocket) {
+					followerSocket.leave(sessionId)
+					followerSocket.emit('initiator_disconnect')
+				}
 				socket.emit('follower_disconnect', followerName)
 			}
 		} else {
