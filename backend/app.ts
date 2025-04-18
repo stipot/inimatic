@@ -50,6 +50,8 @@ function isValidGuid(guid: string) {
 }
 
 io.on('connect', (socket) => {
+	console.log(socket.id)
+
 	socket.on('disconnecting', async () => {
 		const rooms = Array.from(socket.rooms).filter(
 			(roomId) => roomId != socket.id

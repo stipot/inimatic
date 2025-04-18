@@ -93,6 +93,7 @@ export class PhoneComponent implements AfterViewInit {
 	croppedImage = ''
 	devices: { [key: string]: string } = {}
 	deviceId = localStorage.getItem('scanDeviceId')
+	isSocketDisconnected = false
 
 	constructor(
 		private plt: Platform,
@@ -137,6 +138,15 @@ export class PhoneComponent implements AfterViewInit {
 
 		this.socket.on('connection', (data) => {
 			this.receiveData(data)
+		})
+
+		this.socket.on('disconnect', () => (this.isSocketDisconnected = true))
+
+		this.socket.on('connect', () => {
+			if (this.isConnected && this.isSocketDisconnected) {
+				this.connectToSession()
+				this.isSocketDisconnected = false
+			}
 		})
 
 		tf.loadGraphModel('assets/model/model.json').then((tfModel) => {
