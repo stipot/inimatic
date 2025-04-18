@@ -61,15 +61,26 @@ io.on('connect', (socket) => {
 		const sessionData: SessionData = JSON.parse(
 			(await redisClient.get(sessionId))!
 		)
+
+		if (sessionData == null) {
+			socket.to(sessionId).emit('initiator_disconnect')
+			return
+		}
+
 		let isInitiator = sessionData.initiatorSocketId === socket.id
 		if (isInitiator) {
 			socket.to(sessionId).emit('initiator_disconnect')
+			io.socketsLeave(sessionId)
+			await redisClient.del(sessionId)
 			// delete saved files
 		} else {
 			io.to(sessionData.initiatorSocketId).emit(
 				'follower_disconnect',
 				sessionData.followers[socket.id]
 			)
+
+			delete sessionData.followers[socket.id]
+			await redisClient.set(sessionId, JSON.stringify(sessionData))
 		}
 	})
 
@@ -96,22 +107,18 @@ io.on('connect', (socket) => {
 		const sessionData: SessionData = JSON.parse(
 			(await redisClient.get(sessionId))!
 		)
-		if (sessionData === null) return
+		console.log('add follower', followerName)
+
+		if (sessionData === null) {
+			socket.emit('initiator_disconnect')
+			return
+		}
 
 		sessionData.followers[socket.id] = followerName
 		socket.join(sessionId)
 
 		await redisClient.set(sessionId, JSON.stringify(sessionData))
-	})
 
-	socket.on('session_connect', async (sessionId) => {
-		// if (data.isInitiator) return
-		console.log(sessionId)
-
-		const sessionData: SessionData = JSON.parse(
-			(await redisClient.get(sessionId))!
-		)
-		const followerName = sessionData.followers[socket.id]
 		io.to(sessionData.initiatorSocketId).emit(
 			'connect_follower',
 			followerName
@@ -126,6 +133,11 @@ io.on('connect', (socket) => {
 			(await redisClient.get(sessionId))!
 		)
 
+		if (sessionData == null) {
+			socket.emit('initiator_disconnect')
+			return
+		}
+
 		if (isInitiator) {
 			const socketIds = Object.keys(sessionData.followers).filter(
 				(followerSocketId) =>
@@ -134,9 +146,7 @@ io.on('connect', (socket) => {
 			console.log(socketIds)
 
 			if (socketIds.length === 1) {
-				if (socketIds[0] in sessionData.followers) {
-					delete sessionData.followers[socketIds[0]]
-				}
+				delete sessionData.followers[socketIds[0]]
 				await redisClient.set(sessionId, JSON.stringify(sessionData))
 				const sockets = await io.sockets.fetchSockets()
 				const followerSocket = sockets.filter(
@@ -149,6 +159,8 @@ io.on('connect', (socket) => {
 				socket.emit('follower_disconnect', followerName)
 			}
 		} else {
+			delete sessionData.followers[socket.id]
+			await redisClient.set(sessionId, JSON.stringify(sessionData))
 			socket.leave(sessionId)
 			socket.emit('initiator_disconnect')
 			io.to(sessionData.initiatorSocketId).emit(

@@ -52,7 +52,6 @@ export class HomePage {
 	sessionID = '-'
 	url = location.origin + '/follower'
 	qrData = ''
-	incomingSignal = 'tester'
 	isInitiator = true
 	verificationStep = false
 	isConnected = false

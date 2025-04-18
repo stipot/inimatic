@@ -5,7 +5,7 @@ import {
 	AfterViewInit,
 	ChangeDetectorRef,
 } from '@angular/core'
-import { ActivatedRoute } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms' // Make sure this import is included
 import { Platform } from '@ionic/angular'
@@ -97,7 +97,8 @@ export class PhoneComponent implements AfterViewInit {
 	constructor(
 		private plt: Platform,
 		private cdr: ChangeDetectorRef,
-		private route: ActivatedRoute
+		private route: ActivatedRoute,
+		private router: Router
 	) {
 		addIcons({ image, camera, refresh, close })
 		const isInStandaloneMode = () =>
@@ -128,8 +129,10 @@ export class PhoneComponent implements AfterViewInit {
 			}
 
 			this.isConnected = false
+			this.messagesLog = []
 			this.cdr.detectChanges()
 			this.initVideoElements()
+			localStorage.removeItem('sessionID')
 		})
 
 		this.socket.on('connection', (data) => {
@@ -144,7 +147,7 @@ export class PhoneComponent implements AfterViewInit {
 				this.isDistribution = Boolean(
 					this.route.snapshot.queryParamMap.get('isDistribution')!
 				)
-				this.enterToSession()
+
 				if (this.isDistribution) {
 					this.connectToSession()
 					this.showConnectedStage()
@@ -190,6 +193,15 @@ export class PhoneComponent implements AfterViewInit {
 		if (this.isInitiator) return
 
 		this.initVideoElements()
+
+		if (
+			!this.route.snapshot.queryParamMap.get('sessionId') &&
+			localStorage.getItem('sessionID')
+		) {
+			this.sessionID = localStorage.getItem('sessionID')!
+			this.connectToSession()
+			this.showConnectedStage()
+		}
 	}
 
 	initVideoElements() {
@@ -214,7 +226,7 @@ export class PhoneComponent implements AfterViewInit {
 		this.videoElement.srcObject = null
 	}
 
-	enterToSession() {
+	connectToSession() {
 		if (!this.isInitiator && this.sessionID) {
 			this.socket.emit('add_follower', {
 				sessionId: this.sessionID,
@@ -223,11 +235,21 @@ export class PhoneComponent implements AfterViewInit {
 		}
 	}
 
-	connectToSession() {
-		this.socket.emit('session_connect', this.sessionID)
-	}
+	// connectToSession() {
+	// 	this.socket.emit('session_connect', this.sessionID)
+	// }
 
 	showConnectedStage() {
+		localStorage.setItem('sessionID', this.sessionID)
+		if (this.route.snapshot.queryParamMap.get('sessionId')) {
+			this.router.navigate([], {
+				queryParams: {
+					sessionId: null,
+					isDistribution: null,
+				},
+				queryParamsHandling: 'merge',
+			})
+		}
 		this.isConnected = true
 		console.log('CONNECT')
 		this.cdr.detectChanges()
@@ -354,17 +376,11 @@ export class PhoneComponent implements AfterViewInit {
 					)
 					this.sessionID = params.get('sessionId')!
 					this.isDistribution = Boolean(params.get('isDistribution')!)
-					console.log(
-						this.scanResult,
-						String(this.sessionID),
-						String(this.isDistribution)
-					)
 
-					this.enterToSession()
 					if (this.isDistribution) {
+						this.connectToSession()
 						this.stopScan()
 						this.reset()
-						this.connectToSession()
 						this.showConnectedStage()
 					} else {
 						this.sendVerifImage()
@@ -422,9 +438,18 @@ export class PhoneComponent implements AfterViewInit {
 
 				if (code) {
 					this.scanResult = code.data
-					this.sessionID = this.scanResult!.split('sessionId=')[1]
-					this.enterToSession()
-					this.sendVerifImage()
+					const params = new URLSearchParams(
+						this.scanResult!.split('follower')[1]
+					)
+					this.sessionID = params.get('sessionId')!
+					this.isDistribution = Boolean(params.get('isDistribution')!)
+
+					if (this.isDistribution) {
+						this.connectToSession()
+						this.showConnectedStage()
+					} else {
+						this.sendVerifImage()
+					}
 				}
 			} else {
 				const imgData = this.handleVerifImage(
