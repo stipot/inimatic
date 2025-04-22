@@ -136,8 +136,13 @@ export class PhoneComponent implements AfterViewInit {
 			localStorage.removeItem('sessionID')
 		})
 
-		this.socket.on('connection', (data) => {
+		this.socket.on('connection', (data, fn) => {
 			this.receiveData(data)
+			console.log(fn)
+
+			if (fn) {
+				fn()
+			}
 		})
 
 		this.socket.on('disconnect', () => (this.isSocketDisconnected = true))
@@ -186,7 +191,7 @@ export class PhoneComponent implements AfterViewInit {
 			return
 		}
 
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			this.socket.emit(
 				'conductor',
 				{
@@ -194,7 +199,7 @@ export class PhoneComponent implements AfterViewInit {
 					isInitiator: this.isInitiator,
 					data: data,
 				},
-				() => resolve(true)
+				() => resolve()
 			)
 		})
 	}
@@ -265,8 +270,8 @@ export class PhoneComponent implements AfterViewInit {
 		this.cdr.detectChanges()
 	}
 
-	async sendMessage() {
-		await this.send({ type: 'sendMessage', message: this.message })
+	sendMessage() {
+		this.send({ type: 'sendMessage', message: this.message })
 	}
 
 	disconnect() {

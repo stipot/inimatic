@@ -135,13 +135,16 @@ export class HomePage {
 		}
 		console.log('send')
 
-		await new Promise((resolve) => {
-			this.socket.emit('conductor', {
-				sessionId: this.sessionID,
-				isInitiator: this.isInitiator,
-				data: data,
-			})
-			resolve(true)
+		await new Promise<void>((resolve) => {
+			this.socket.emit(
+				'conductor',
+				{
+					sessionId: this.sessionID,
+					isInitiator: this.isInitiator,
+					data: data,
+				},
+				() => resolve
+			)
 		})
 	}
 
@@ -178,7 +181,7 @@ export class HomePage {
 	}
 
 	async transferFile() {
-		this.send({
+		await this.send({
 			type: 'transferFile',
 			fileName: this.file?.name,
 			size: this.file?.size,
@@ -193,7 +196,7 @@ export class HomePage {
 			offset += chunksize
 		}
 
-		this.send({
+		await this.send({
 			type: 'transferFile',
 			fileName: this.file!.name,
 			size: this.file!.size,
@@ -202,7 +205,7 @@ export class HomePage {
 	}
 
 	async sendChunk(value: Uint8Array) {
-		this.send({
+		await this.send({
 			type: 'transferFile',
 			fileName: this.file!.name,
 			size: this.file!.size,

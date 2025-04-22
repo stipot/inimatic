@@ -334,17 +334,19 @@ io.on('connect', (socket) => {
 				}
 			}
 		}
-
-		if (receivedData.isInitiator) {
-			socket
-				.to(receivedData.sessionId)
-				.emit('connection', receivedData.data)
-		} else {
-			io.to(sessionData.initiatorSocketId).emit(
-				'connection',
-				receivedData.data
-			)
-		}
+		await new Promise<void>((resolve) => {
+			if (receivedData.isInitiator) {
+				socket
+					.to(receivedData.sessionId)
+					.emit('connection', receivedData.data, () => resolve())
+			} else {
+				io.to(sessionData.initiatorSocketId).emit(
+					'connection',
+					receivedData.data,
+					() => resolve()
+				)
+			}
+		})
 
 		if (fn) {
 			fn(1)

@@ -112,8 +112,12 @@ export class DistributionComponent {
 			this.cdr.detectChanges()
 		})
 
-		this.socket.on('connection', (data) => {
+		this.socket.on('connection', (data, fn) => {
 			this.receiveData(data)
+
+			if (fn) {
+				fn()
+			}
 		})
 
 		this.socket.on('saved_file', (fileName) => {
@@ -129,13 +133,16 @@ export class DistributionComponent {
 		}
 		console.log('send')
 
-		await new Promise((resolve) => {
-			this.socket.emit('conductor', {
-				sessionId: this.sessionID,
-				isInitiator: this.isInitiator,
-				data: data,
-			})
-			resolve(true)
+		await new Promise<void>((resolve) => {
+			this.socket.emit(
+				'conductor',
+				{
+					sessionId: this.sessionID,
+					isInitiator: this.isInitiator,
+					data: data,
+				},
+				() => resolve()
+			)
 		})
 	}
 
@@ -172,7 +179,7 @@ export class DistributionComponent {
 	}
 
 	async transferFile() {
-		this.send({
+		await this.send({
 			type: 'transferFile',
 			fileName: this.file?.name,
 			size: this.file?.size,
@@ -187,7 +194,7 @@ export class DistributionComponent {
 			offset += chunksize
 		}
 
-		this.send({
+		await this.send({
 			type: 'transferFile',
 			fileName: this.file!.name,
 			size: this.file!.size,
@@ -196,7 +203,7 @@ export class DistributionComponent {
 	}
 
 	async sendChunk(value: Uint8Array) {
-		this.send({
+		await this.send({
 			type: 'transferFile',
 			fileName: this.file!.name,
 			size: this.file!.size,
