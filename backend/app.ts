@@ -149,7 +149,7 @@ io.on('connect', (socket) => {
 
 		const sessionId = rooms[0]
 		console.log('disconnect', socket.id, socket.rooms, sessionId)
-		const sessionData: SessionData = JSON.parse(
+		const sessionData: UnionSessionData = JSON.parse(
 			(await redisClient.get(sessionId))!
 		)
 
@@ -160,6 +160,19 @@ io.on('connect', (socket) => {
 
 		let isInitiator = sessionData.initiatorSocketId === socket.id
 		if (isInitiator) {
+			if (sessionData.type === 'public') {
+				await Promise.all(
+					sessionData.fileNames.map((item) => {
+						const path =
+							FILESPATH + item.timestamp + '_' + item.fileName
+
+						return new Promise<void>((resolve) =>
+							fs.unlink(path, () => resolve())
+						)
+					})
+				)
+			}
+
 			socket.to(sessionId).emit('initiator_disconnect')
 			io.socketsLeave(sessionId)
 			await redisClient.del(sessionId)
@@ -295,7 +308,7 @@ io.on('connect', (socket) => {
 							.destroyTimeout
 					)
 					await new Promise<void>((resolve) =>
-						openedStreams[dataBody.sessionId][
+						openedStreams[receivedData.sessionId][
 							dataBody.fileName
 						].stream.close(() => resolve())
 					)
@@ -310,7 +323,9 @@ io.on('connect', (socket) => {
 						receivedData.sessionId,
 						JSON.stringify(sessionData)
 					)
-					delete openedStreams[dataBody.sessionId][dataBody.fileName]
+					delete openedStreams[receivedData.sessionId][
+						dataBody.fileName
+					]
 				}
 			}
 		}
