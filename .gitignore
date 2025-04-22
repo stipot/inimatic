@@ -71,3 +71,6 @@ Thumbs.db
 
 # Certificates
 /deployment/etc/ssl/
+
+# Public files
+/temp/

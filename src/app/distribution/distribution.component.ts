@@ -56,6 +56,7 @@ export class DistributionComponent {
 	message = ''
 	socket: Socket
 	file: File | null = null
+	fileList: string[] = []
 	writableStream: WritableStream | null = null
 	writer: WritableStreamDefaultWriter<any> | null = null
 	fileData: Data | null = null
@@ -75,7 +76,7 @@ export class DistributionComponent {
 
 		this.isInitiator = location.pathname !== '/follower'
 
-		this.socket.emit('add_initiator')
+		this.socket.emit('add_initiator', 'public')
 
 		this.socket.on('session_id', (data) => {
 			this.sessionID = data

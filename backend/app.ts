@@ -3,6 +3,7 @@ import http from 'http'
 import { v4 as uuidv4 } from 'uuid'
 import { Server } from 'socket.io'
 import { createClient } from 'redis'
+import fs from 'fs'
 
 type FollowerData = {
 	followerName: string
@@ -19,10 +20,33 @@ type SessionData = {
 	timestamp: Date
 }
 
+type PublicSessionData = SessionData & {
+	type: 'public'
+	fileNames: Array<{ fileName: string; timestamp: string }>
+}
+
+type PrivateSessionData = SessionData & {
+	type: 'private'
+}
+
+type UnionSessionData = PublicSessionData | PrivateSessionData
+
 type CommunicationData = {
 	isInitiator: boolean
 	sessionId: string
-	data: string
+	data: any
+}
+
+type StreamInfo = {
+	stream: fs.WriteStream
+	destroyTimeout: NodeJS.Timeout
+	timestamp: string
+}
+
+type OpenedStreams = {
+	[sessionId: string]: {
+		[fileName: string]: StreamInfo
+	}
 }
 
 const app = express()
@@ -46,6 +70,71 @@ const redisClient = await createClient({ url })
 function isValidGuid(guid: string) {
 	return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
 		guid
+	)
+}
+
+const openedStreams: OpenedStreams = {}
+const FILESPATH = '/tmp/inimatic_public_files/'
+
+if (!fs.existsSync(FILESPATH)) {
+	fs.mkdirSync(FILESPATH)
+}
+
+function saveFileChunk(
+	sessionId: string,
+	fileName: string,
+	content: Array<number>
+) {
+	if (!openedStreams[sessionId]) {
+		openedStreams[sessionId] = {}
+	}
+
+	if (!openedStreams[sessionId][fileName]) {
+		const timestamp = String(Date.now())
+		const stream = fs.createWriteStream(
+			FILESPATH + timestamp + '_' + fileName
+		)
+		const destroyTimeout = setTimeout(() => {
+			openedStreams[sessionId][fileName].stream.destroy()
+			fs.unlink(
+				FILESPATH +
+					openedStreams[sessionId][fileName].timestamp +
+					'_' +
+					fileName,
+				() => {}
+			)
+			delete openedStreams[sessionId][fileName]
+			console.log('destroy', openedStreams)
+		}, 30000)
+
+		openedStreams[sessionId][fileName] = {
+			stream,
+			destroyTimeout,
+			timestamp,
+		}
+	}
+
+	clearTimeout(openedStreams[sessionId][fileName].destroyTimeout)
+	openedStreams[sessionId][fileName].destroyTimeout = setTimeout(() => {
+		openedStreams[sessionId][fileName].stream.destroy()
+		fs.unlink(
+			FILESPATH +
+				openedStreams[sessionId][fileName].timestamp +
+				'_' +
+				fileName,
+			(error) => {
+				if (error) console.log(error)
+			}
+		)
+		delete openedStreams[sessionId][fileName]
+		console.log('destroy', openedStreams)
+	}, 30000)
+
+	return new Promise<void>((resolve, reject) =>
+		openedStreams[sessionId][fileName].stream.write(
+			new Uint8Array(content),
+			(error) => (error ? reject(error) : resolve())
+		)
 	)
 }
 
@@ -86,13 +175,26 @@ io.on('connect', (socket) => {
 		}
 	})
 
-	socket.on('add_initiator', async () => {
+	socket.on('add_initiator', async (type) => {
 		const guid = uuidv4()
-		const sessionData: SessionData = {
-			initiatorSocketId: socket.id,
-			followers: {},
-			timestamp: new Date(),
+		let sessionData: UnionSessionData
+		if (type === 'private') {
+			sessionData = {
+				initiatorSocketId: socket.id,
+				followers: {},
+				timestamp: new Date(),
+				type: type,
+			}
+		} else {
+			sessionData = {
+				initiatorSocketId: socket.id,
+				followers: {},
+				timestamp: new Date(),
+				type: type,
+				fileNames: [],
+			}
 		}
+
 		await redisClient.set(guid, JSON.stringify(sessionData))
 		await redisClient.expire(guid, 3600)
 
@@ -175,9 +277,43 @@ io.on('connect', (socket) => {
 	socket.on('conductor', async (data, fn) => {
 		const receivedData: CommunicationData = data
 
-		const sessionData: SessionData = JSON.parse(
+		const sessionData: UnionSessionData = JSON.parse(
 			(await redisClient.get(receivedData.sessionId))!
 		)
+
+		if (sessionData.type === 'public') {
+			const dataBody = receivedData.data
+			if (dataBody.type === 'transferFile') {
+				await saveFileChunk(
+					receivedData.sessionId,
+					dataBody.fileName,
+					dataBody.content
+				)
+				if (dataBody.end) {
+					clearTimeout(
+						openedStreams[receivedData.sessionId][dataBody.fileName]
+							.destroyTimeout
+					)
+					await new Promise<void>((resolve) =>
+						openedStreams[dataBody.sessionId][
+							dataBody.fileName
+						].stream.close(() => resolve())
+					)
+					sessionData.fileNames.push({
+						fileName: dataBody.fileName,
+						timestamp:
+							openedStreams[receivedData.sessionId][
+								dataBody.fileName
+							].timestamp,
+					})
+					await redisClient.set(
+						receivedData.sessionId,
+						JSON.stringify(sessionData)
+					)
+					delete openedStreams[dataBody.sessionId][dataBody.fileName]
+				}
+			}
+		}
 
 		if (receivedData.isInitiator) {
 			socket

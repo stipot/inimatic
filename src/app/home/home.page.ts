@@ -82,7 +82,7 @@ export class HomePage {
 		// mobile device detection
 		// const regexp = new RegExp(/android|iphone|kindle|ipad/i)
 		// this.isInitiator = !regexp.test(navigator.userAgent)
-		this.socket.emit('add_initiator')
+		this.socket.emit('add_initiator', 'private')
 
 		this.socket.on('session_id', (data) => {
 			this.sessionID = data
