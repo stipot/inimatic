@@ -115,6 +115,11 @@ export class DistributionComponent {
 		this.socket.on('connection', (data) => {
 			this.receiveData(data)
 		})
+
+		this.socket.on('saved_file', (fileName) => {
+			this.fileList.push(fileName)
+			console.log(this.fileList)
+		})
 	}
 
 	async send(data: any) {

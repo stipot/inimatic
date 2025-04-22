@@ -302,6 +302,7 @@ io.on('connect', (socket) => {
 					dataBody.fileName,
 					dataBody.content
 				)
+
 				if (dataBody.end) {
 					clearTimeout(
 						openedStreams[receivedData.sessionId][dataBody.fileName]
@@ -326,6 +327,10 @@ io.on('connect', (socket) => {
 					delete openedStreams[receivedData.sessionId][
 						dataBody.fileName
 					]
+					io.to(sessionData.initiatorSocketId).emit(
+						'saved_file',
+						dataBody.fileName
+					)
 				}
 			}
 		}
