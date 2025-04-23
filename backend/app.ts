@@ -1,9 +1,10 @@
 import express from 'express'
 import http from 'http'
 import { v4 as uuidv4 } from 'uuid'
-import { Server } from 'socket.io'
+import { Server, Socket } from 'socket.io'
 import { createClient } from 'redis'
 import fs from 'fs'
+import { stat } from 'fs/promises'
 
 type FollowerData = {
 	followerName: string
@@ -215,13 +216,61 @@ io.on('connect', (socket) => {
 		socket.emit('session_id', guid)
 	})
 
+	async function sendToPublicFollower(socket: Socket, emitObject: any) {
+		return new Promise<void>((resolve) => {
+			socket.emit('connection', emitObject, () => resolve())
+		})
+	}
+
+	async function distributeSessionFiles(
+		socket: Socket,
+		fileNames: Array<{ fileName: string; timestamp: string }>
+	) {
+		const chunksize = 64 * 1024
+
+		for (let item of fileNames) {
+			const path = FILESPATH + item.timestamp + '_' + item.fileName
+			const readStream = fs.createReadStream(path, {
+				highWaterMark: chunksize,
+				// encoding: 'utf8',
+			})
+
+			const size = (await stat(path)).size
+
+			await sendToPublicFollower(socket, {
+				type: 'transferFile',
+				fileName: item.fileName,
+				size: size,
+			})
+			console.log(size)
+
+			for await (const chunk of readStream) {
+				console.log('chunk', typeof chunk)
+
+				await sendToPublicFollower(socket, {
+					type: 'transferFile',
+					fileName: item.fileName,
+					size: size,
+					content: new Uint8Array(chunk),
+				})
+			}
+
+			await sendToPublicFollower(socket, {
+				type: 'transferFile',
+				fileName: item.fileName,
+				size: size,
+				end: true,
+			})
+		}
+	}
+
 	socket.on('add_follower', async (data) => {
 		// возможно, стоит проверять наличие других комнат у сокета,
 		// чтоб не было лишних подключений
 		const { followerName, sessionId }: FollowerData = data
 		if (!isValidGuid(sessionId)) return
 
-		const sessionData: SessionData = JSON.parse(
+		const sessionData: UnionSessionData = JSON.parse(
 			(await redisClient.get(sessionId))!
 		)
 		console.log('add follower', followerName)
@@ -240,6 +289,10 @@ io.on('connect', (socket) => {
 			'connect_follower',
 			followerName
 		)
+
+		if (sessionData.type === 'public') {
+			await distributeSessionFiles(socket, sessionData.fileNames)
+		}
 	})
 
 	socket.on('disconnect_follower', async (data) => {
