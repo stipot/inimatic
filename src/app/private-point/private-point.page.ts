@@ -2,9 +2,9 @@ import { Component, ChangeDetectorRef } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms' // Make sure this import is included
 import { Platform } from '@ionic/angular'
-import { RouterLinkWithHref } from '@angular/router'
 import { addIcons } from 'ionicons'
-import { close } from 'ionicons/icons'
+import { close, camera, refresh, closeOutline } from 'ionicons/icons'
+import { RouterLinkWithHref } from '@angular/router'
 import {
 	IonHeader,
 	IonToolbar,
@@ -12,6 +12,7 @@ import {
 	IonContent,
 	IonButton,
 	IonCard,
+	IonCardContent,
 	IonCardTitle,
 	IonIcon,
 } from '@ionic/angular/standalone'
@@ -23,47 +24,45 @@ import {
 	Data,
 	TransferFileData,
 	SendMessageData,
+	VerificationData,
 	ConfirmationData,
 } from 'src/types'
 
 @Component({
-	selector: 'app-distribution',
-	templateUrl: './distribution.component.html',
-	styleUrls: ['./distribution.component.scss'],
+	selector: 'app-home',
+	templateUrl: 'private-point.page.html',
+	styleUrls: ['private-point.page.scss'],
 	standalone: true,
 	imports: [
-		IonIcon,
-		IonCardTitle,
-		IonCard,
-		IonHeader,
-		IonToolbar,
-		IonTitle,
+		// IonIcon,
+		// IonCardTitle,
+		// IonCard,
 		IonContent,
 		QRCodeModule,
 		FormsModule,
 		CommonModule,
 		IonButton,
-		RouterLinkWithHref,
 	],
 })
-export class DistributionComponent {
+export class PrivatePointPage {
 	sessionID = '-'
 	url = location.origin + '/follower'
 	qrData = ''
 	isInitiator = true
+	verificationStep = false
 	isConnected = false
 	followers: string[] = []
 	message = ''
 	socket: Socket
+	verificationImage = ''
 	file: File | null = null
-	fileList: string[] = []
 	writableStream: WritableStream | null = null
 	writer: WritableStreamDefaultWriter<any> | null = null
 	fileData: Data | null = null
 	messagesLog: string[] = []
 
 	constructor(private plt: Platform, private cdr: ChangeDetectorRef) {
-		addIcons({ close })
+		addIcons({ close, camera, refresh })
 		const isInStandaloneMode = () =>
 			'standalone' in window.navigator && window.navigator['standalone']
 
@@ -76,21 +75,29 @@ export class DistributionComponent {
 
 		this.isInitiator = location.pathname !== '/follower'
 
-		this.socket.emit('add_initiator', 'public')
+		// mobile device detection
+		// const regexp = new RegExp(/android|iphone|kindle|ipad/i)
+		// this.isInitiator = !regexp.test(navigator.userAgent)
+		this.socket.emit('add_initiator', 'private')
 
 		this.socket.on('session_id', (data) => {
 			this.sessionID = data
-			this.qrData =
-				this.url + `?sessionId=${this.sessionID}` + '&isDistribution=1'
+			this.qrData = this.url + `?sessionId=${this.sessionID}`
 		})
 
 		this.socket.on('connect_follower', async (data) => {
 			this.followers.push(data)
+			this.verificationStep = false
+			this.verificationImage = ''
 			this.showConnectedStage()
 			console.log(data)
 		})
 
 		this.socket.on('follower_disconnect', async (follower) => {
+			if (this.verificationStep) {
+				this.verificationStep = false
+			}
+
 			this.followers = this.followers.filter(
 				(followerName) => followerName !== follower
 			)
@@ -112,17 +119,8 @@ export class DistributionComponent {
 			this.cdr.detectChanges()
 		})
 
-		this.socket.on('connection', (data, fn) => {
+		this.socket.on('connection', (data) => {
 			this.receiveData(data)
-
-			if (fn) {
-				fn()
-			}
-		})
-
-		this.socket.on('saved_file', (fileName) => {
-			this.fileList.push(fileName)
-			console.log(this.fileList)
 		})
 	}
 
@@ -141,7 +139,7 @@ export class DistributionComponent {
 					isInitiator: this.isInitiator,
 					data: data,
 				},
-				() => resolve()
+				() => resolve
 			)
 		})
 	}
@@ -218,6 +216,8 @@ export class DistributionComponent {
 			this.receiveFile(receivedData)
 		} else if (receivedData.type === 'sendMessage') {
 			this.receiveMessage(receivedData)
+		} else if (receivedData.type === 'verify') {
+			this.receiveVerificationImage(receivedData)
 		} else if (receivedData.type === 'confirmation') {
 			this.receiveConfirmationData(receivedData)
 		}
@@ -249,6 +249,12 @@ export class DistributionComponent {
 	receiveMessage(receivedData: SendMessageData) {
 		console.log(receivedData.message)
 		this.messagesLog = this.messagesLog.concat([receivedData.message])
+	}
+
+	receiveVerificationImage(receivedData: VerificationData) {
+		this.verificationStep = true
+		this.verificationImage = receivedData.content
+		this.cdr.detectChanges()
 	}
 
 	receiveConfirmationData(receivedData: ConfirmationData) {

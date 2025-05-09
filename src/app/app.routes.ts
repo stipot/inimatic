@@ -2,14 +2,17 @@ import { Routes } from '@angular/router'
 
 export const routes: Routes = [
 	{
-		path: 'home',
-		loadComponent: () => import('./home/home.page').then((m) => m.HomePage),
+		path: 'private',
+		loadComponent: () =>
+			import('./private-point/private-point.page').then(
+				(m) => m.PrivatePointPage
+			),
 	},
 	{
-		path: 'distribution',
+		path: 'public',
 		loadComponent: () =>
-			import('./distribution/distribution.component').then(
-				(m) => m.DistributionComponent
+			import('./public-point/public-point.component').then(
+				(m) => m.PublicPointComponent
 			),
 	},
 	{
@@ -19,6 +22,9 @@ export const routes: Routes = [
 	},
 	{
 		path: '',
-		loadComponent: () => import('./home/home.page').then((m) => m.HomePage),
+		loadComponent: () =>
+			import('./private-point/private-point.page').then(
+				(m) => m.PrivatePointPage
+			),
 	},
 ]

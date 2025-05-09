@@ -1,43 +1,24 @@
-<ion-header [translucent]="true">
-	<ion-toolbar>
-		<ion-title>
-			INIMATIC |
-			<ion-button [routerLink]="['/follower']" *ngIf="isInitiator" size="small">Phone page</ion-button>
-			<ion-button routerLink="/home" *ngIf="!isInitiator" size="small">PC page</ion-button>
-		</ion-title>
-	</ion-toolbar>
-</ion-header>
-
 <ion-content [fullscreen]="true">
 	<div class="content">
-		<div id="initiator_container" *ngIf="isInitiator">
+		<div id="initiator_container" *ngIf="!isConnected">
 			<div class="instruction">
 				<div>
 					<strong>1. Open Inimatic application on your phone</strong>
 					<p>and point it to the screen</p>
 				</div>
 				<p>{{sessionID}}</p>
-				<qrcode [qrdata]="qrData" [width]="220" [errorCorrectionLevel]="'M'" *ngIf="qrData != ''"></qrcode>
+				@if (verificationStep) {
+					<img [src]="verificationImage" alt="verification image" [width]="200" [ngStyle]="{border: '7px solid blue'}">
+				} @else {
+					<qrcode [qrdata]="qrData" [width]="220" [errorCorrectionLevel]="'M'" *ngIf="qrData != ''"></qrcode>
+				}
 
 			</div>
 		</div>
 
 		<div class="connected_stage" *ngIf="isConnected">
-			<div>
-				<h2>Connected devices:</h2>
-				<ul class="follower_list">
-					<li *ngFor="let follower of followers">
-						<ion-card class="follower_device">
-							<ion-card-title>{{follower}}</ion-card-title>
-							<button (click)="disconnectDevice(follower)">
-								<ion-icon name="close" ></ion-icon>
-							</button>
-						</ion-card>
-					</li>
-				</ul>
-			</div>
-
 			<div class="functional">
+				<h2>Connected</h2>
 				<div class="transfer_file_form_wrapper">
 					<form class="transfer_file_form">
 						<input type="file" (change)="uploadFile($event)" />

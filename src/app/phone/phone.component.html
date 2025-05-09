@@ -1,17 +1,8 @@
-<ion-header [translucent]="true">
-	<ion-toolbar>
-		<ion-title>
-			INIMATIC |
-			<ion-button [routerLink]="['/follower']" *ngIf="isInitiator" size="small">Phone page</ion-button>
-			<ion-button routerLink="/home" *ngIf="!isInitiator" size="small">PC page</ion-button>
-		</ion-title>
-	</ion-toolbar>
-</ion-header>
-
 <ion-content [fullscreen]="true">
 	<div id="follower_container" *ngIf="!isInitiator" style="text-align: center;">
 		<div *ngIf="!isConnected">
-			<input type="text" placeholder="Your name" [(ngModel)]="followerName" maxlength="11">
+			<!-- <input type="text" placeholder="Your name" [(ngModel)]="followerName" maxlength="11"> -->
+			<ion-input class="name_input" label="Your name" labelPlacement="stacked" [(ngModel)]="followerName" maxlength="11" color="primary" ng-style="{'width': 100px}"></ion-input>
 			<p>{{predictedDigits}}</p>
 			<!-- Fallback for iOS PWA -->
 			<input #fileinput type="file" accept="image/*;capture=camera" hidden (change)="handleFile($event)" />
@@ -77,6 +68,8 @@
 			<p *ngFor="let messageL of messagesLog" class="selectable">{{messageL}}</p>
 		</div>
 	</div>
+
+	<!-- to download the font immediately -->
+	<p class="t">.</p>
 </ion-content>
-<!-- to download the font immediately -->
-<p class="t">.</p>
+

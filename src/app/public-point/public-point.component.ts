@@ -2,9 +2,9 @@ import { Component, ChangeDetectorRef } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms' // Make sure this import is included
 import { Platform } from '@ionic/angular'
-import { addIcons } from 'ionicons'
-import { close, camera, refresh, closeOutline } from 'ionicons/icons'
 import { RouterLinkWithHref } from '@angular/router'
+import { addIcons } from 'ionicons'
+import { close } from 'ionicons/icons'
 import {
 	IonHeader,
 	IonToolbar,
@@ -12,7 +12,6 @@ import {
 	IonContent,
 	IonButton,
 	IonCard,
-	IonCardContent,
 	IonCardTitle,
 	IonIcon,
 } from '@ionic/angular/standalone'
@@ -24,49 +23,43 @@ import {
 	Data,
 	TransferFileData,
 	SendMessageData,
-	VerificationData,
 	ConfirmationData,
 } from 'src/types'
 
 @Component({
-	selector: 'app-home',
-	templateUrl: 'home.page.html',
-	styleUrls: ['home.page.scss'],
+	selector: 'app-distribution',
+	templateUrl: './public-point.component.html',
+	styleUrls: ['./public-point.component.scss'],
 	standalone: true,
 	imports: [
-		// IonIcon,
-		// IonCardTitle,
-		// IonCard,
-		IonHeader,
-		IonToolbar,
-		IonTitle,
+		IonIcon,
+		IonCardTitle,
+		IonCard,
 		IonContent,
 		QRCodeModule,
 		FormsModule,
 		CommonModule,
 		IonButton,
-		RouterLinkWithHref,
 	],
 })
-export class HomePage {
+export class PublicPointComponent {
 	sessionID = '-'
 	url = location.origin + '/follower'
 	qrData = ''
 	isInitiator = true
-	verificationStep = false
 	isConnected = false
 	followers: string[] = []
 	message = ''
 	socket: Socket
-	verificationImage = ''
 	file: File | null = null
+	fileList: string[] = []
 	writableStream: WritableStream | null = null
 	writer: WritableStreamDefaultWriter<any> | null = null
 	fileData: Data | null = null
 	messagesLog: string[] = []
 
 	constructor(private plt: Platform, private cdr: ChangeDetectorRef) {
-		addIcons({ close, camera, refresh })
+		addIcons({ close })
 		const isInStandaloneMode = () =>
 			'standalone' in window.navigator && window.navigator['standalone']
 
@@ -79,29 +72,21 @@ export class HomePage {
 
 		this.isInitiator = location.pathname !== '/follower'
 
-		// mobile device detection
-		// const regexp = new RegExp(/android|iphone|kindle|ipad/i)
-		// this.isInitiator = !regexp.test(navigator.userAgent)
-		this.socket.emit('add_initiator', 'private')
+		this.socket.emit('add_initiator', 'public')
 
 		this.socket.on('session_id', (data) => {
 			this.sessionID = data
-			this.qrData = this.url + `?sessionId=${this.sessionID}`
+			this.qrData =
+				this.url + `?sessionId=${this.sessionID}` + '&isDistribution=1'
 		})
 
 		this.socket.on('connect_follower', async (data) => {
 			this.followers.push(data)
-			this.verificationStep = false
-			this.verificationImage = ''
 			this.showConnectedStage()
 			console.log(data)
 		})
 
 		this.socket.on('follower_disconnect', async (follower) => {
-			if (this.verificationStep) {
-				this.verificationStep = false
-			}
-
 			this.followers = this.followers.filter(
 				(followerName) => followerName !== follower
 			)
@@ -123,8 +108,17 @@ export class HomePage {
 			this.cdr.detectChanges()
 		})
 
-		this.socket.on('connection', (data) => {
+		this.socket.on('connection', (data, fn) => {
 			this.receiveData(data)
+
+			if (fn) {
+				fn()
+			}
+		})
+
+		this.socket.on('saved_file', (fileName) => {
+			this.fileList.push(fileName)
+			console.log(this.fileList)
 		})
 	}
 
@@ -143,7 +137,7 @@ export class HomePage {
 					isInitiator: this.isInitiator,
 					data: data,
 				},
-				() => resolve
+				() => resolve()
 			)
 		})
 	}
@@ -220,8 +214,6 @@ export class HomePage {
 			this.receiveFile(receivedData)
 		} else if (receivedData.type === 'sendMessage') {
 			this.receiveMessage(receivedData)
-		} else if (receivedData.type === 'verify') {
-			this.receiveVerificationImage(receivedData)
 		} else if (receivedData.type === 'confirmation') {
 			this.receiveConfirmationData(receivedData)
 		}
@@ -253,12 +245,6 @@ export class HomePage {
 	receiveMessage(receivedData: SendMessageData) {
 		console.log(receivedData.message)
 		this.messagesLog = this.messagesLog.concat([receivedData.message])
-	}
-
-	receiveVerificationImage(receivedData: VerificationData) {
-		this.verificationStep = true
-		this.verificationImage = receivedData.content
-		this.cdr.detectChanges()
 	}
 
 	receiveConfirmationData(receivedData: ConfirmationData) {

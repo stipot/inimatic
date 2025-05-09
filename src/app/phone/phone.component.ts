@@ -12,7 +12,6 @@ import { Platform } from '@ionic/angular'
 import jsQR from 'jsqr-es6'
 import { addIcons } from 'ionicons'
 import { close, camera, refresh, image, thumbsUpSharp } from 'ionicons/icons'
-import { RouterLinkWithHref } from '@angular/router'
 import {
 	IonHeader,
 	IonToolbar,
@@ -24,6 +23,8 @@ import {
 	IonItem,
 	IonSelect,
 	IonSelectOption,
+	IonText,
+	IonInput,
 } from '@ionic/angular/standalone'
 import { QRCodeModule } from 'angularx-qrcode'
 import { io, Socket } from 'socket.io-client'
@@ -41,20 +42,18 @@ interface Point {
 	styleUrls: ['./phone.component.scss'],
 	standalone: true,
 	imports: [
+		IonInput,
+		IonText,
 		IonItem,
 		IonList,
 		IonSelect,
 		IonSelectOption,
-		IonHeader,
-		IonToolbar,
-		IonTitle,
 		IonContent,
 		QRCodeModule,
 		FormsModule,
 		CommonModule,
 		IonButton,
 		IonIcon,
-		RouterLinkWithHref,
 	],
 })
 export class PhoneComponent implements AfterViewInit {

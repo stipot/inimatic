@@ -1,3 +1,25 @@
 <ion-app>
-  <ion-router-outlet></ion-router-outlet>
+  <ion-tabs>
+	<ion-header [translucent]="true">
+		<ion-toolbar>
+			<ion-title>
+				INIMATIC
+			</ion-title>
+		</ion-toolbar>
+	</ion-header>
+	<ion-tab-bar slot="bottom">
+	  <ion-tab-button tab="private">
+		Private point
+	  </ion-tab-button>
+	  <ion-tab-button tab="public">
+		Public point
+	  </ion-tab-button>
+	  <ion-tab-button tab="follower">
+		My phone
+	  </ion-tab-button>
+	  <ion-tab-button tab="settings">
+		Settings
+	  </ion-tab-button>
+	</ion-tab-bar>
+  </ion-tabs>
 </ion-app>
