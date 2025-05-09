@@ -1,7 +1,6 @@
 <ion-content [fullscreen]="true">
 	<div id="follower_container" *ngIf="!isInitiator" style="text-align: center;">
 		<div *ngIf="!isConnected">
-			<!-- <input type="text" placeholder="Your name" [(ngModel)]="followerName" maxlength="11"> -->
 			<ion-input class="name_input" label="Your name" labelPlacement="stacked" [(ngModel)]="followerName" maxlength="11" color="primary" ng-style="{'width': 100px}"></ion-input>
 			<p>{{predictedDigits}}</p>
 			<!-- Fallback for iOS PWA -->

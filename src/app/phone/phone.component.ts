@@ -13,9 +13,6 @@ import jsQR from 'jsqr-es6'
 import { addIcons } from 'ionicons'
 import { close, camera, refresh, image, thumbsUpSharp } from 'ionicons/icons'
 import {
-	IonHeader,
-	IonToolbar,
-	IonTitle,
 	IonContent,
 	IonButton,
 	IonIcon,
@@ -43,7 +40,6 @@ interface Point {
 	standalone: true,
 	imports: [
 		IonInput,
-		IonText,
 		IonItem,
 		IonList,
 		IonSelect,
