@@ -22,9 +22,7 @@ export const routes: Routes = [
 	},
 	{
 		path: '',
-		loadComponent: () =>
-			import('./private-point/private-point.page').then(
-				(m) => m.PrivatePointPage
-			),
+		redirectTo: '/private',
+		pathMatch: 'full',
 	},
 ]
