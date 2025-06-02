@@ -30,7 +30,10 @@
 		"serve:api-dev": "tsc -p ./backend/tsconfig.backend.json && PORT=3030 node ./dist/out-tsc/app.js",
 		"watch": "ng build --watch --configuration development",
 		"test": "ng test",
-		"lint": "ng lint"
+		"lint": "ng lint",
+		"add.android": "ionic cordova platform add android",
+		"build.android": "ionic cordova build android --prod",
+		"a": "ionic cordova run android -l --external --address 192.168.1.8 -p=3030"
 	},
 	"private": true,
 	"dependencies": {
@@ -43,6 +46,7 @@
 		"@angular/platform-browser-dynamic": "^17.0.2",
 		"@angular/router": "^17.0.2",
 		"@angular/service-worker": "^17.3.7",
+		"@ionic-native/in-app-browser": "^5.36.0",
 		"@ionic/angular": "^8.0.0",
 		"@ionic/cli": "^7.2.0",
 		"@ionic/cordova-builders": "^11.0.0",
@@ -50,6 +54,7 @@
 		"angularx-qrcode": "^17.0.0",
 		"axios": "^1.7.2",
 		"body-parser": "^1.20.2",
+		"cordova": "^12.0.0",
 		"cors": "^2.8.5",
 		"express": "^4.19.2",
 		"firebase-functions": "^5.0.1",

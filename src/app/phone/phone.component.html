@@ -30,7 +30,7 @@
 				</ion-item>
 			  </ion-list>
 			<!-- Shows our camera stream -->
-			<video playsinline autoplay #video width="40%"></video>
+			<video playsinline autoplay #video width="40%" [style]="scanActive ? 'display: inline;' : 'display: none;'"></video>
 
 			<!-- Used to render the camera stream images -->
 			<canvas #canvas style="display: none;"></canvas>

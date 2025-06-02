@@ -12,19 +12,17 @@ import {
 } from '@ionic/angular/standalone'
 import { addIcons } from 'ionicons'
 import {
-	library,
-	playCircle,
-	radio,
-	search,
 	lockClosedOutline,
 	people,
 	phonePortrait,
 	settings,
 } from 'ionicons/icons'
+import { Platform } from '@ionic/angular'
 
 @Component({
 	selector: 'app-root',
 	templateUrl: 'app.component.html',
+	styleUrls: ['app.component.scss'],
 	standalone: true,
 	imports: [
 		IonIcon,
@@ -38,7 +36,9 @@ import {
 	],
 })
 export class AppComponent {
-	constructor() {
+	isAndroid: boolean
+	constructor(private plt: Platform) {
 		addIcons({ lockClosedOutline, people, phonePortrait, settings })
+		this.isAndroid = this.plt.platforms().includes('mobile')
 	}
 }

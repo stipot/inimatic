@@ -29,10 +29,14 @@ import { environment } from 'src/environments/environment'
 import streamSaver from 'streamsaver'
 import { Data, TransferFileData, SendMessageData } from 'src/types'
 import * as tf from '@tensorflow/tfjs'
+
+import { v4 as uuidv4 } from 'uuid'
+
 interface Point {
 	x: number
 	y: number
 }
+
 @Component({
 	selector: 'app-phone',
 	templateUrl: './phone.component.html',
@@ -173,7 +177,7 @@ export class PhoneComponent implements AfterViewInit {
 		let deviceId = localStorage.getItem('deviceId')
 
 		if (!deviceId) {
-			deviceId = crypto.randomUUID().slice(0, 11)
+			deviceId = uuidv4().slice(0, 11)
 			localStorage.setItem('deviceId', deviceId)
 		}
 
