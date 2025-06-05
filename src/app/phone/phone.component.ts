@@ -31,6 +31,7 @@ import { Data, TransferFileData, SendMessageData } from 'src/types'
 import * as tf from '@tensorflow/tfjs'
 
 import { v4 as uuidv4 } from 'uuid'
+import { LoginWVService } from '../loginwv.service'
 
 interface Point {
 	x: number
@@ -93,12 +94,14 @@ export class PhoneComponent implements AfterViewInit {
 	devices: { [key: string]: string } = {}
 	deviceId = localStorage.getItem('scanDeviceId')
 	isSocketDisconnected = false
+	isReady = false
 
 	constructor(
 		private plt: Platform,
 		private cdr: ChangeDetectorRef,
 		private route: ActivatedRoute,
-		private router: Router
+		private router: Router,
+		public loginwv: LoginWVService
 	) {
 		addIcons({ image, camera, refresh, close })
 		const isInStandaloneMode = () =>
@@ -170,6 +173,9 @@ export class PhoneComponent implements AfterViewInit {
 					this.startScan()
 				}
 			}
+		})
+		this.plt.ready().then(() => {
+			this.isReady = true
 		})
 	}
 
@@ -855,5 +861,16 @@ export class PhoneComponent implements AfterViewInit {
 			}
 		}
 		return largestRectangle
+	}
+
+	showElib() {
+		this.loginwv.openLoginPage(
+			'https://elibrary.ru/',
+			'!Boolean(document.querySelector("#login"))'
+		)
+	}
+
+	showMosRu() {
+		this.loginwv.openLoginPage('https://www.mos.ru/', 'true')
 	}
 }

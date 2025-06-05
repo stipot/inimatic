@@ -102,4 +102,5 @@
         </host>
     </universal-links>
     <allow-navigation href="http://192.168.1.8:8100" sessionid="cab137a6" />
+    <allow-navigation href="http://0.0.0.0:3031" sessionid="331a963e" />
 </widget>

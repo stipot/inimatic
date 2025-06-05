@@ -22,6 +22,8 @@
 				<ion-icon slot="start" name="refresh"></ion-icon>
 				Reset
 			</ion-button>
+			<ion-button (click)="showElib()">elibrary</ion-button>
+			<ion-button (click)="showMosRu()">mos ru</ion-button>
 			<ion-list *ngIf="scanActive">
 				<ion-item>
 				  <ion-select aria-label="cameras" placeholder="Select camera" [(ngModel)]="deviceId" (ionChange)="restartScan()">
