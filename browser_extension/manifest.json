@@ -2,7 +2,7 @@
 	"name": "Inimatic",
 	"host_permissions": ["*://*/*"],
 	"permissions": ["cookies", "scripting"],
-	"description": "Base Level Extension",
+	"description": "Extension for Inimatic app",
 	"version": "1.0",
 	"manifest_version": 3,
 	"action": {

@@ -1,36 +1,21 @@
-// chrome.tabs.create({ url: 'https://ya.ru' })
-// chrome.cookies.set({
-// 	url: 'https://ya.ru',
-// 	// domain: 'ya.ru',
-// 	name: 'test_kuka1111',
-// 	value: 'cookie_value',
-// })
-
-console.log(chrome.runtime.id)
-
 chrome.runtime.onMessage.addListener(({ type, body }) => {
 	console.log(type, body)
 	if (type === 'set_session') {
-		console.log(body)
 		const cookies = JSON.parse(body.cookies)
 
-		removeCookies(body.url)
-			.then(() => setCookies(body.url, cookies))
-			.then(() => chrome.tabs.create({ url: body.url }))
-			.then(() => setCookies(body.url, cookies))
+		setCookies(body.url, cookies).then(() =>
+			chrome.tabs.create({ url: body.url })
+		)
 	}
 })
 
 function removeCookies(url) {
 	const parsedURL = new URL(url)
 	const promisses = []
-	console.log(parsedURL.hostname)
 
 	return chrome.cookies
 		.getAll({ domain: parsedURL.hostname })
 		.then((cookies) => {
-			console.log(cookies)
-
 			for (let i = 0; i < cookies.length; i++) {
 				console.log(
 					parsedURL.protocol +
@@ -50,7 +35,6 @@ function removeCookies(url) {
 					})
 				)
 			}
-			console.log('remove cookies:', promisses.length)
 			return Promise.all(promisses)
 		})
 }
@@ -60,9 +44,8 @@ function setCookies(url, cookies) {
 
 	for (let cookieName in cookies) {
 		const domain = '.' + new URL(url).hostname
-		const now = new Date()
-		const future = new Date(now)
-		future.setFullYear(now.getFullYear() + 1)
+		const future = new Date()
+		future.setFullYear(new Date().getFullYear() + 1)
 		const cookieParams = {
 			name: cookieName,
 			value: cookies[cookieName].value,
@@ -70,7 +53,6 @@ function setCookies(url, cookies) {
 			domain: domain,
 			expirationDate: Math.floor(future.getTime() / 1000),
 		}
-		console.log(cookieName, cookies[cookieName])
 
 		// if ('domain' in cookies[cookieName]) {
 		// 	cookieParams['domain'] = cookies[cookieName].domain
@@ -87,7 +69,6 @@ function setCookies(url, cookies) {
 
 		promisses.push(chrome.cookies.set(cookieParams))
 	}
-	console.log('set cookies:', promisses.length)
 
 	return Promise.all(promisses)
 }
