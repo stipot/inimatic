@@ -3,19 +3,8 @@ import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms' // Make sure this import is included
 import { Platform } from '@ionic/angular'
 import { addIcons } from 'ionicons'
-import { close, camera, refresh, closeOutline } from 'ionicons/icons'
-import { RouterLinkWithHref } from '@angular/router'
-import {
-	IonHeader,
-	IonToolbar,
-	IonTitle,
-	IonContent,
-	IonButton,
-	IonCard,
-	IonCardContent,
-	IonCardTitle,
-	IonIcon,
-} from '@ionic/angular/standalone'
+import { close, camera, refresh } from 'ionicons/icons'
+import { IonContent, IonButton, IonInput } from '@ionic/angular/standalone'
 import { QRCodeModule } from 'angularx-qrcode'
 import { io, Socket } from 'socket.io-client'
 import { environment } from 'src/environments/environment'
@@ -29,17 +18,13 @@ import {
 	CookieData,
 } from 'src/types'
 
-declare const chrome: any
-
 @Component({
 	selector: 'app-home',
 	templateUrl: 'private-point.page.html',
 	styleUrls: ['private-point.page.scss'],
 	standalone: true,
 	imports: [
-		// IonIcon,
-		// IonCardTitle,
-		// IonCard,
+		IonInput,
 		IonContent,
 		QRCodeModule,
 		FormsModule,
@@ -66,21 +51,11 @@ export class PrivatePointPage {
 
 	constructor(private plt: Platform, private cdr: ChangeDetectorRef) {
 		addIcons({ close, camera, refresh })
-		const isInStandaloneMode = () =>
-			'standalone' in window.navigator && window.navigator['standalone']
-
-		if (this.plt.is('ios') && isInStandaloneMode()) {
-			console.log('I am a an iOS PWA!')
-			// E.g. hide the scan functionality!
-		}
 
 		this.socket = io(environment.app_server_url, { secure: true })
 
 		this.isInitiator = location.pathname !== '/follower'
 
-		// mobile device detection
-		// const regexp = new RegExp(/android|iphone|kindle|ipad/i)
-		// this.isInitiator = !regexp.test(navigator.userAgent)
 		this.socket.emit('add_initiator', 'private')
 
 		this.socket.on('session_id', (data) => {
@@ -167,6 +142,10 @@ export class PrivatePointPage {
 			isInitiator: this.isInitiator,
 			followerName: followerName,
 		})
+	}
+
+	test() {
+		console.log(this.message)
 	}
 
 	sendMessage() {

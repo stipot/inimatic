@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms' // Make sure this import is include
 import { Platform } from '@ionic/angular'
 import jsQR from 'jsqr-es6'
 import { addIcons } from 'ionicons'
-import { close, camera, refresh, image, thumbsUpSharp } from 'ionicons/icons'
+import { close, camera, refresh, image } from 'ionicons/icons'
 import {
 	IonContent,
 	IonButton,
@@ -33,7 +33,6 @@ import * as tf from '@tensorflow/tfjs'
 import { v4 as uuidv4 } from 'uuid'
 import { LoginWVService } from '../loginwv.service'
 import { providers } from './providers'
-// import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions/ngx'
 
 interface Point {
 	x: number
@@ -92,7 +91,6 @@ export class PhoneComponent implements AfterViewInit {
 	verificationStep = false
 	predictedDigits: string[] = []
 	digits: string[] = []
-	croppedImage = ''
 	devices: { [key: string]: string } = {}
 	deviceId = localStorage.getItem('scanDeviceId')
 	isSocketDisconnected = false
@@ -105,26 +103,15 @@ export class PhoneComponent implements AfterViewInit {
 		private cdr: ChangeDetectorRef,
 		private route: ActivatedRoute,
 		private router: Router,
-		public loginwv: LoginWVService // public adpr: AndroidPermissions
+		public loginwv: LoginWVService
 	) {
 		addIcons({ image, camera, refresh, close })
-		const isInStandaloneMode = () =>
-			'standalone' in window.navigator && window.navigator['standalone']
-
-		if (this.plt.is('ios') && isInStandaloneMode()) {
-			console.log('I am a an iOS PWA!')
-			// E.g. hide the scan functionality!
-		}
 
 		this.isAndroid = this.plt.platforms().includes('mobile')
 
 		this.socket = io(environment.app_server_url, { secure: true })
 
 		this.isInitiator = location.pathname !== '/follower'
-
-		// mobile device detection
-		// const regexp = new RegExp(/android|iphone|kindle|ipad/i)
-		// this.isInitiator = !regexp.test(navigator.userAgent)
 
 		this.socket.on('initiator_disconnect', async () => {
 			if (this.writer) {
@@ -261,10 +248,6 @@ export class PhoneComponent implements AfterViewInit {
 		}
 	}
 
-	// connectToSession() {
-	// 	this.socket.emit('session_connect', this.sessionID)
-	// }
-
 	showConnectedStage() {
 		localStorage.setItem('sessionID', this.sessionID)
 		if (this.route.snapshot.queryParamMap.get('sessionId')) {
@@ -346,7 +329,6 @@ export class PhoneComponent implements AfterViewInit {
 	}
 
 	async scan() {
-		// console.log("Scan started", this.videoElement.readyState, this.videoElement.HAVE_ENOUGH_DATA, this.videoElement)
 		if (
 			this.videoElement.readyState === this.videoElement.HAVE_ENOUGH_DATA
 		) {
@@ -550,7 +532,6 @@ export class PhoneComponent implements AfterViewInit {
 			rect.width,
 			rect.height
 		)
-		// this.croppedImage = this.cropCanvas.toDataURL()
 
 		this.resizedCanvas.width = 200
 		this.resizedCanvas.height = 200
@@ -559,7 +540,6 @@ export class PhoneComponent implements AfterViewInit {
 		imgData = this.resizedCtx!.getImageData(0, 0, 200, 200)
 		this.toGrayscale(imgData)
 		this.resizedCtx!.putImageData(imgData, 0, 0)
-		this.croppedImage = this.resizedCanvas.toDataURL()
 
 		return imgData
 	}
@@ -689,7 +669,6 @@ export class PhoneComponent implements AfterViewInit {
 		ctx.font = `${fontSize}px Aileron`
 		ctx.fillStyle = 'black'
 
-		// const textMetrics = ctx.measureText('8')
 		const offsetY = 67
 
 		const x1 = imageSize / 10

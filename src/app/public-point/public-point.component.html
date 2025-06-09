@@ -8,7 +8,6 @@
 				</div>
 				<p>{{sessionID}}</p>
 				<qrcode [qrdata]="qrData" [width]="220" [errorCorrectionLevel]="'M'" *ngIf="qrData != ''"></qrcode>
-
 			</div>
 		</div>
 
@@ -37,8 +36,8 @@
 					</form>
 				</div>
 
-				<div>
-					<input type="text" [(ngModel)]="message" placeholder="Enter message to send" />
+				<div class="send_message_wrapper">
+					<ion-input class="ion-primary-input" type="text" label="Message" fill="outline" labelPlacement="floating" [(ngModel)]="message" placeholder="Enter message to send" />
 					<ion-button (click)="sendMessage()">Send Message</ion-button>
 				</div>
 				<div class="message_log" *ngIf="messagesLog.length > 0">

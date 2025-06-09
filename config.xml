@@ -3,7 +3,7 @@
     <name>Inimatic</name>
     <description>Personal profiler</description>
     <author email="connect@stipot.com" href="http://www.inimatic.com/">Inimatic project</author>
-    <content src="index.html" />
+    <content original-src="index.html" src="http://0.0.0.0:3031" />
     <access origin="*" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />

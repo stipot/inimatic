@@ -2,18 +2,15 @@ import { Component, ChangeDetectorRef } from '@angular/core'
 import { CommonModule } from '@angular/common'
 import { FormsModule } from '@angular/forms' // Make sure this import is included
 import { Platform } from '@ionic/angular'
-import { RouterLinkWithHref } from '@angular/router'
 import { addIcons } from 'ionicons'
 import { close } from 'ionicons/icons'
 import {
-	IonHeader,
-	IonToolbar,
-	IonTitle,
 	IonContent,
 	IonButton,
 	IonCard,
 	IonCardTitle,
 	IonIcon,
+	IonInput,
 } from '@ionic/angular/standalone'
 import { QRCodeModule } from 'angularx-qrcode'
 import { io, Socket } from 'socket.io-client'
@@ -32,6 +29,7 @@ import {
 	styleUrls: ['./public-point.component.scss'],
 	standalone: true,
 	imports: [
+		IonInput,
 		IonIcon,
 		IonCardTitle,
 		IonCard,

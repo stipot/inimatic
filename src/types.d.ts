@@ -22,8 +22,15 @@ export type ConfirmationData = {
 	confirmed: boolean
 }
 
+export type CookieData = {
+	type: 'transferCookies'
+	url: string
+	cookies: Array<object>
+}
+
 export type Data =
 	| TransferFileData
 	| SendMessageData
 	| VerifyData
 	| ConfirmationData
+	| CookieData
