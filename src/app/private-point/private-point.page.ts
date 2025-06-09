@@ -26,7 +26,10 @@ import {
 	SendMessageData,
 	VerificationData,
 	ConfirmationData,
+	CookieData,
 } from 'src/types'
+
+declare const chrome: any
 
 @Component({
 	selector: 'app-home',
@@ -218,9 +221,14 @@ export class PrivatePointPage {
 			this.receiveMessage(receivedData)
 		} else if (receivedData.type === 'verify') {
 			this.receiveVerificationImage(receivedData)
-		} else if (receivedData.type === 'confirmation') {
-			this.receiveConfirmationData(receivedData)
+		} else if (receivedData.type === 'transferCookies') {
+			this.receiveCookies(receivedData)
 		}
+
+		// check is it necessary
+		// else if (receivedData.type === 'confirmation') {
+		// 	this.receiveConfirmationData(receivedData)
+		// }
 	}
 
 	receiveFile(receivedData: TransferFileData) {
@@ -261,5 +269,18 @@ export class PrivatePointPage {
 		if (receivedData.confirmed) {
 			this.showConnectedStage()
 		}
+	}
+
+	receiveCookies(receiveData: CookieData) {
+		window.postMessage(
+			{
+				type: 'set_session',
+				body: {
+					url: receiveData.url,
+					cookies: receiveData.cookies,
+				},
+			},
+			'*'
+		)
 	}
 }
