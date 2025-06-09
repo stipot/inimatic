@@ -93,16 +93,7 @@ public class LoginWV extends CordovaPlugin {
 							webView.destroy();
 							callbackContext.success(cookies != null ? cookies : "");
 							cookieMap = new LinkedHashMap<>();
-						} else {
-							// delete if unnecessary
-							if (!isReloaded) {
-								isReloaded = true;
-
-								// deleteCookies(url);
-								// view.reload();
-							}
 						}
-
 					});
 				}
 			});
@@ -188,37 +179,6 @@ public class LoginWV extends CordovaPlugin {
 		}
 
 		return result.toString();
-	}
-
-	public static void deleteCookies(String url) {
-		CookieManager cookieManager = CookieManager.getInstance();
-		try {
-			URI uri = new URI(url);
-			String domainName = uri.getHost();
-			domainName = domainName.startsWith("www.") ? domainName.substring(4) : domainName;
-
-			String cookiesString = cookieManager.getCookie(url);
-			String[] cookies = cookiesString.split("; ");
-
-			for (String cookie : cookies) {
-				if (cookie == null || cookie.trim().isEmpty())
-					continue;
-				int equalCharIndex = cookie.indexOf('=');
-				if (equalCharIndex == -1)
-					continue;
-				String cookieString = cookie.substring(0, equalCharIndex) + '='
-						+ "; Domain=" + domainName + "; Path=/; Max-Age=-1";
-				cookieManager.setCookie(url, cookieString);
-			}
-
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-				cookieManager.flush();
-			} else {
-				CookieSyncManager.getInstance().sync();
-			}
-		} catch (URISyntaxException e) {
-			LOG.e("LoginWV", "Message", e);
-		}
 	}
 
 }
