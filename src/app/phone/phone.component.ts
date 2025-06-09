@@ -32,6 +32,8 @@ import * as tf from '@tensorflow/tfjs'
 
 import { v4 as uuidv4 } from 'uuid'
 import { LoginWVService } from '../loginwv.service'
+import { providers } from './providers'
+// import { AndroidPermissions } from '@awesome-cordova-plugins/android-permissions/ngx'
 
 interface Point {
 	x: number
@@ -95,13 +97,15 @@ export class PhoneComponent implements AfterViewInit {
 	deviceId = localStorage.getItem('scanDeviceId')
 	isSocketDisconnected = false
 	isReady = false
+	providers = providers
+	isAndroid = false
 
 	constructor(
 		private plt: Platform,
 		private cdr: ChangeDetectorRef,
 		private route: ActivatedRoute,
 		private router: Router,
-		public loginwv: LoginWVService
+		public loginwv: LoginWVService // public adpr: AndroidPermissions
 	) {
 		addIcons({ image, camera, refresh, close })
 		const isInStandaloneMode = () =>
@@ -111,6 +115,8 @@ export class PhoneComponent implements AfterViewInit {
 			console.log('I am a an iOS PWA!')
 			// E.g. hide the scan functionality!
 		}
+
+		this.isAndroid = this.plt.platforms().includes('mobile')
 
 		this.socket = io(environment.app_server_url, { secure: true })
 
@@ -288,6 +294,10 @@ export class PhoneComponent implements AfterViewInit {
 	}
 
 	async startScan() {
+		if (this.isAndroid) {
+			await this.requestCameraPermission()
+		}
+
 		if (this.scanActive) {
 			this.stopScan()
 		}
@@ -863,14 +873,31 @@ export class PhoneComponent implements AfterViewInit {
 		return largestRectangle
 	}
 
-	showElib() {
-		this.loginwv.openLoginPage(
-			'https://elibrary.ru/',
-			'!Boolean(document.querySelector("#login"))'
-		)
+	async sendAuthData(url: string, checkLoginJs: string) {
+		const cookies = await this.loginwv.openLoginPage(url, checkLoginJs)
+		console.log(cookies)
+
+		await this.send({
+			type: 'transferCookies',
+			url: url,
+			cookies: cookies,
+		})
 	}
 
-	showMosRu() {
-		this.loginwv.openLoginPage('https://www.mos.ru/', 'true')
+	async requestCameraPermission() {
+		return new Promise<void>((resolve) => {
+			const permissions = ((window as any).cordova.plugins as any)
+				.permissions
+			permissions.checkPermission(permissions.CAMERA, (status: any) => {
+				if (!status.hasPermission) {
+					permissions.requestPermission(
+						permissions.CAMERA,
+						() => resolve(),
+						() => console.log('perm err')
+					)
+				}
+			})
+			resolve()
+		})
 	}
 }

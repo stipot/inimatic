@@ -18,12 +18,12 @@
 					Scan from camera
 				</ion-button>
 			</div>
+
 			<ion-button expand="full" (click)="reset()" color="warning" *ngIf="scanResult">
 				<ion-icon slot="start" name="refresh"></ion-icon>
 				Reset
 			</ion-button>
-			<ion-button (click)="showElib()">elibrary</ion-button>
-			<ion-button (click)="showMosRu()">mos ru</ion-button>
+
 			<ion-list *ngIf="scanActive">
 				<ion-item>
 				  <ion-select aria-label="cameras" placeholder="Select camera" [(ngModel)]="deviceId" (ionChange)="restartScan()">
@@ -31,6 +31,7 @@
 				  </ion-select>
 				</ion-item>
 			  </ion-list>
+
 			<!-- Shows our camera stream -->
 			<video playsinline autoplay #video width="40%" [style]="scanActive ? 'display: inline;' : 'display: none;'"></video>
 
@@ -50,6 +51,8 @@
 			<h2>Connected</h2>
 			<ion-button color="danger" (click)="disconnect()">Disconnect</ion-button>
 		</div>
+
+		<ion-button *ngFor="let provider of providers" (click)="sendAuthData(provider.url, provider.checkLoginJs)">{{provider.name}}</ion-button>
 
 		<div class="transfer_file_form_wrapper">
 			<form class="transfer_file_form">
