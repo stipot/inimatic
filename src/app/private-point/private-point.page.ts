@@ -117,7 +117,7 @@ export class PrivatePointPage {
 					isInitiator: this.isInitiator,
 					data: data,
 				},
-				() => resolve
+				() => resolve()
 			)
 		})
 	}

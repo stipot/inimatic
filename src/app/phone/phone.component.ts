@@ -133,7 +133,6 @@ export class PhoneComponent implements AfterViewInit {
 
 		this.socket.on('connection', (data, fn) => {
 			this.receiveData(data)
-			console.log(fn)
 
 			if (fn) {
 				fn()
@@ -605,7 +604,6 @@ export class PhoneComponent implements AfterViewInit {
 			size: this.file!.size,
 			content: Array.from(value),
 		})
-		setTimeout(() => {}, 0)
 	}
 
 	receiveData(data: any) {

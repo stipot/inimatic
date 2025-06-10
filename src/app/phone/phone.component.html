@@ -51,7 +51,9 @@
 			<ion-button color="danger" (click)="disconnect()">Disconnect</ion-button>
 		</div>
 
-		<ion-button *ngFor="let provider of providers" (click)="sendAuthData(provider.url, provider.checkLoginJs)">{{provider.name}}</ion-button>
+		<div *ngIf="isAndroid">
+			<ion-button ngIf="isAndroid" *ngFor="let provider of providers" (click)="sendAuthData(provider.url, provider.checkLoginJs)">{{provider.name}}</ion-button>
+		</div>
 
 		<div class="transfer_file_form_wrapper">
 			<form class="transfer_file_form">
