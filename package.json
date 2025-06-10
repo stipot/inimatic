@@ -34,6 +34,7 @@
 		"add.android": "ionic cordova platform add android",
 		"build.android": "ionic cordova build android --prod",
 		"a": "ionic cordova run android -l --external --address 192.168.1.8 -p=3030",
+		"dev.android": "ionic cordova run android -l --external",
 		"add.plugin": "ionic cordova plugin add ./LoginWV",
 		"update.plugin": "ionic cordova plugin remove cordova-plugin-loginwv && ionic cordova plugin add ./LoginWV"
 	},

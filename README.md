@@ -14,16 +14,11 @@ Nodejs 18
 Before proceeding, make sure the latest version of Node.js and npm are installed. See Environment Setup for details. Install the Ionic CLI with npm:
 ```
 npm i -g @ionic/cli
-npm i -g @ionic/angular@latest --save
 npm i -g cordova
-Cordova requirements # Проверка требований
-ionic cordova platform add android
-npm install @ionic/cordova-builders
-ionic cordova platform add electron
-ionic cordova plugin add ./LoginWV
-./functions npm install
-./functions npm run build
-npm install firebase-tools
+npm i -g native-run # for run Android app in dev mode
+npm i
+npm add.android
+npm add.plugin
 ```
 5. Setup [Redis on Windows](https://github.com/microsoftarchive/redis/releases), Redis on Ubuntu:
 ```
@@ -56,7 +51,7 @@ export PATH=${PATH}:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools:$GRADLE_PAT
 export PATH="$PATH:$GRADLE_PATH"
 ```
 
-## Deployment
+## Deployment 
 ```
 sudo su
 # for env deployment
@@ -65,6 +60,16 @@ sudo su
 ./deployment/frontend_deploy.sh
 # for build backend
 ./deployment/backend_deploy.sh
+```
+
+## Run Android app in development mode
+```
+npm run dev.android [--address <ip address> -p=<port>]
+```
+
+## Build Android app  
+```
+npm run build.android
 ```
 
 ## IONIC documentation
