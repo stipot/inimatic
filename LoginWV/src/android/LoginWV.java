@@ -55,8 +55,6 @@ public class LoginWV extends CordovaPlugin {
 			settings.setDomStorageEnabled(true);
 
 			webView.setWebViewClient(new WebViewClient() {
-				boolean isReloaded = false;
-
 				@Override
 				public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
 					try {
@@ -101,6 +99,7 @@ public class LoginWV extends CordovaPlugin {
 			webView.loadUrl(loginUrl);
 			dialog.setContentView(webView);
 			dialog.show();
+			dialog.setOnDismissListener(d -> webView.destroy());
 		});
   	}
 

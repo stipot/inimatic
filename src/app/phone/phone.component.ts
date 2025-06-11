@@ -227,6 +227,7 @@ export class PhoneComponent implements AfterViewInit {
 
 	reset() {
 		this.scanResult = null
+		this.verificationStep = false
 	}
 
 	stopScan() {
