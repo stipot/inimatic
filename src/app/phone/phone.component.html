@@ -50,7 +50,7 @@
 			<ion-button color="danger" (click)="disconnect()">Disconnect</ion-button>
 		</div>
 
-		<div *ngIf="isAndroid">
+		<div *ngIf="isAndroid && !isPublicMode">
 			<ion-button *ngFor="let provider of providers" (click)="sendAuthData(provider.url, provider.checkLoginJs)">{{provider.name}}</ion-button>
 		</div>
 
@@ -67,8 +67,8 @@
 			<ion-input class="ion-primary-input ion-input-bottom-border" type="text" label="Message" labelPlacement="floating" [(ngModel)]="message" placeholder="Enter message to send"/>
 			<ion-button (click)="sendMessage()">Send Message</ion-button>
 		</div>
-		<div>
-			<p *ngIf="messagesLog.length > 0">Messages:</p>
+		<div class="message_log" *ngIf="messagesLog.length > 0">
+			<p>Messages:</p>
 			<p *ngFor="let messageL of messagesLog" class="selectable">{{messageL}}</p>
 		</div>
 	</div>

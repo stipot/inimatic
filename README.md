@@ -44,6 +44,7 @@ https://forum.ionicframework.com/t/how-to-create-build-apk-file-for-android-from
 
 # https://stackoverflow.com/questions/43480076/ionic-2-error-could-not-find-an-installed-version-of-gradle-either-in-android
 * Min SDK 33
+* Used OpenJDK v11.0.0.2, Android SDK 33, Gradle v7.6.2
 ```
 export GRADLE_PATH="/home/teacher/.gradle/wrapper/dists/gradle-8.0.2-all/25ipb77ce0ypy3f9xdton1ae6/gradle-8.0.2/bin/"
 export ANDROID_HOME=/home/teacher/Android/Sdk

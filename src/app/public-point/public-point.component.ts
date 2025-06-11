@@ -75,7 +75,7 @@ export class PublicPointComponent {
 		this.socket.on('session_id', (data) => {
 			this.sessionID = data
 			this.qrData =
-				this.url + `?sessionId=${this.sessionID}` + '&isDistribution=1'
+				this.url + `?sessionId=${this.sessionID}` + '&isPublicMode=1'
 		})
 
 		this.socket.on('connect_follower', async (data) => {

@@ -76,7 +76,7 @@ export class PhoneComponent implements AfterViewInit {
 	resizedCtx = this.resizedCanvas.getContext('2d')
 
 	sessionID = '-'
-	isDistribution = false
+	isPublicMode = false
 	followerName = this.getDeviceId()
 	isInitiator = true
 	isConnected = false
@@ -156,11 +156,11 @@ export class PhoneComponent implements AfterViewInit {
 			if (this.route.snapshot.queryParamMap.get('sessionId')) {
 				this.sessionID =
 					this.route.snapshot.queryParamMap.get('sessionId')!
-				this.isDistribution = Boolean(
-					this.route.snapshot.queryParamMap.get('isDistribution')!
+				this.isPublicMode = Boolean(
+					this.route.snapshot.queryParamMap.get('isPublicMode')!
 				)
 
-				if (this.isDistribution) {
+				if (this.isPublicMode) {
 					this.connectToSession()
 					this.showConnectedStage()
 				} else {
@@ -228,6 +228,7 @@ export class PhoneComponent implements AfterViewInit {
 	reset() {
 		this.scanResult = null
 		this.verificationStep = false
+		//off verification step on initiator
 	}
 
 	stopScan() {
@@ -257,7 +258,7 @@ export class PhoneComponent implements AfterViewInit {
 			this.router.navigate([], {
 				queryParams: {
 					sessionId: null,
-					isDistribution: null,
+					isPublicMode: null,
 				},
 				queryParamsHandling: 'merge',
 			})
@@ -390,9 +391,9 @@ export class PhoneComponent implements AfterViewInit {
 						this.scanResult!.split('follower')[1]
 					)
 					this.sessionID = params.get('sessionId')!
-					this.isDistribution = Boolean(params.get('isDistribution')!)
+					this.isPublicMode = Boolean(params.get('isPublicMode')!)
 
-					if (this.isDistribution) {
+					if (this.isPublicMode) {
 						this.connectToSession()
 						this.stopScan()
 						this.reset()
@@ -457,9 +458,9 @@ export class PhoneComponent implements AfterViewInit {
 						this.scanResult!.split('follower')[1]
 					)
 					this.sessionID = params.get('sessionId')!
-					this.isDistribution = Boolean(params.get('isDistribution')!)
+					this.isPublicMode = Boolean(params.get('isPublicMode')!)
 
-					if (this.isDistribution) {
+					if (this.isPublicMode) {
 						this.connectToSession()
 						this.showConnectedStage()
 					} else {
