@@ -107,7 +107,10 @@ export class PhoneComponent implements AfterViewInit {
 	) {
 		addIcons({ image, camera, refresh, close })
 
-		this.isAndroid = this.plt.platforms().includes('mobile')
+		this.isAndroid =
+			this.plt.platforms().includes('mobile') &&
+			!this.plt.platforms().includes('mobileweb')
+		console.log(this.plt.platforms())
 
 		this.socket = io(environment.app_server_url, { secure: true })
 

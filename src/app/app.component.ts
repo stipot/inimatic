@@ -39,6 +39,8 @@ export class AppComponent {
 	isAndroid: boolean
 	constructor(private plt: Platform) {
 		addIcons({ lockClosedOutline, people, phonePortrait, settings })
-		this.isAndroid = this.plt.platforms().includes('mobile')
+		this.isAndroid =
+			this.plt.platforms().includes('mobile') &&
+			!this.plt.platforms().includes('mobileweb')
 	}
 }

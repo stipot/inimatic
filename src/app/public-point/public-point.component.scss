@@ -89,3 +89,9 @@
 	-ms-user-select: text;
 	user-select: text;
 }
+
+.send_message_wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}

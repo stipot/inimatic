@@ -31,6 +31,7 @@
 	align-items: center;
 	gap: 40px;
 }
+
 #follower_container {
 	text-align: center;
 }
@@ -48,15 +49,6 @@
 	width: 400px;
 	align-items: center;
 	gap: 10px;
-
-	button {
-		padding: 15px 10px;
-		font-size: 15px;
-	}
-
-	input {
-		display: block;
-	}
 }
 
 .message_log {
@@ -69,4 +61,10 @@
 	-moz-user-select: text;
 	-ms-user-select: text;
 	user-select: text;
+}
+
+.send_message_wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 }

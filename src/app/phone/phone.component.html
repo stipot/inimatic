@@ -1,8 +1,7 @@
 <ion-content [fullscreen]="true">
 	<div id="follower_container" *ngIf="!isInitiator" style="text-align: center;">
 		<div *ngIf="!isConnected">
-			<ion-input class="name_input ion-primary-input" label="Your name" placeholder="Enter your name" fill="outline" labelPlacement="floating" [(ngModel)]="followerName" maxlength="11" [counter]="true"/>
-			<p>{{predictedDigits}}</p>
+			<ion-input class="name_input ion-primary-input" label="Your name" placeholder="Enter your name" labelPlacement="floating" [(ngModel)]="followerName" maxlength="11" [counter]="true"/>
 			<!-- Fallback for iOS PWA -->
 			<input #fileinput type="file" accept="image/*;capture=camera" hidden (change)="handleFile($event)" />
 
@@ -52,7 +51,7 @@
 		</div>
 
 		<div *ngIf="isAndroid">
-			<ion-button ngIf="isAndroid" *ngFor="let provider of providers" (click)="sendAuthData(provider.url, provider.checkLoginJs)">{{provider.name}}</ion-button>
+			<ion-button *ngFor="let provider of providers" (click)="sendAuthData(provider.url, provider.checkLoginJs)">{{provider.name}}</ion-button>
 		</div>
 
 		<div class="transfer_file_form_wrapper">
@@ -65,7 +64,7 @@
 		</div>
 
 		<div class="send_message_wrapper">
-			<ion-input class="ion-primary-input" type="text" label="Message" fill="outline" labelPlacement="floating" [(ngModel)]="message" placeholder="Enter message to send" />
+			<ion-input class="ion-primary-input ion-input-bottom-border" type="text" label="Message" labelPlacement="floating" [(ngModel)]="message" placeholder="Enter message to send"/>
 			<ion-button (click)="sendMessage()">Send Message</ion-button>
 		</div>
 		<div>
