@@ -347,6 +347,11 @@ io.on('connect', (socket) => {
 			(await redisClient.get(receivedData.sessionId))!
 		)
 
+		if (sessionData == null) {
+			socket.to(receivedData.sessionId).emit('initiator_disconnect')
+			return
+		}
+
 		if (sessionData.type === 'public') {
 			const dataBody = receivedData.data
 			if (dataBody.type === 'transferFile') {
