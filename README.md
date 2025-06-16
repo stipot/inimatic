@@ -73,6 +73,11 @@ npm run dev.android [--address <ip address> -p=<port>]
 npm run build.android
 ```
 
+## Add Browser Extension  
+1. Open ```chrome://extensions``` for Chrome, ```browser://extensions``` for Yandex, ```edge://extensions``` for Edge
+2. Enable Developer Mode by clicking the toggle switch next to Developer mode
+3. Click the "Load unpacked" button and select the ```./browser_extension``` in the project root
+
 ## IONIC documentation
 [IONIC documentation](https://test-bc740.web.app/)
 
