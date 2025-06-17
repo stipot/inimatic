@@ -31,9 +31,15 @@
     <platform name="android">
         <preference name="Scheme" value="http" />
         <preference name="android-compileSdkVersion" value="33" />
+        <preference name="AllowInlineMediaPlayback" value="true" />
         <edit-config file="app/src/main/AndroidManifest.xml" mode="merge" target="/manifest/application" xmlns:android="http://schemas.android.com/apk/res/android">
             <application android:networkSecurityConfig="@xml/network_security_config" />
+            <application android:usesCleartextTraffic="true" />
         </edit-config>
+        <config-file parent="/manifest" target="app/src/main/AndroidManifest.xml" xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.CAMERA" />
+            <uses-permission android:name="android.permission.INTERNET" />
+        </config-file>
         <resource-file src="resources/android/xml/network_security_config.xml" target="app/src/main/res/xml/network_security_config.xml" />
         <allow-intent href="market:*" />
         <icon density="ldpi" src="resources/android/icon/drawable-ldpi-icon.png" />
@@ -100,4 +106,6 @@
             <path url="/__/auth/callback" />
         </host>
     </universal-links>
+    <allow-navigation href="http://192.168.1.8:8100" sessionid="cab137a6" />
+    <allow-navigation href="http://0.0.0.0:3031" sessionid="331a963e" />
 </widget>
