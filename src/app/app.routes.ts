@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router'
+import { HubComponent } from "./features/hub/hub.component"
+import { MemberComponent } from "./features/member/member.component"
 
 export const routes: Routes = [
 	{
@@ -21,8 +23,16 @@ export const routes: Routes = [
 			import('./phone/phone.component').then((m) => m.PhoneComponent),
 	},
 	{
+		path: 'hub',
+		loadComponent: () =>
+			import('./features/hub/hub.component').then((m) => m.HubComponent),
+	},
+	{ path: 'member', component: MemberComponent },
+	{
 		path: '',
 		redirectTo: '/private',
 		pathMatch: 'full',
 	},
+	{ path: '**', redirectTo: 'hub' }                     // wildcard — в самый конец!
 ]
+

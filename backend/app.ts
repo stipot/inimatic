@@ -5,6 +5,7 @@ import { Server, Socket } from 'socket.io'
 import { createClient } from 'redis'
 import fs from 'fs'
 import { stat } from 'fs/promises'
+import { installAdaosBridge } from './adaos-bridge.js'
 
 type FollowerData = {
 	followerName: string
@@ -49,6 +50,7 @@ type OpenedStreams = {
 		[fileName: string]: StreamInfo
 	}
 }
+
 
 const app = express()
 
@@ -99,10 +101,10 @@ function saveFileChunk(
 			openedStreams[sessionId][fileName].stream.destroy()
 			fs.unlink(
 				FILESPATH +
-					openedStreams[sessionId][fileName].timestamp +
-					'_' +
-					fileName,
-				() => {}
+				openedStreams[sessionId][fileName].timestamp +
+				'_' +
+				fileName,
+				() => { }
 			)
 			delete openedStreams[sessionId][fileName]
 			console.log('destroy', openedStreams)
@@ -120,9 +122,9 @@ function saveFileChunk(
 		openedStreams[sessionId][fileName].stream.destroy()
 		fs.unlink(
 			FILESPATH +
-				openedStreams[sessionId][fileName].timestamp +
-				'_' +
-				fileName,
+			openedStreams[sessionId][fileName].timestamp +
+			'_' +
+			fileName,
 			(error) => {
 				if (error) console.log(error)
 			}
@@ -411,6 +413,8 @@ io.on('connect', (socket) => {
 		}
 	})
 })
+
+installAdaosBridge(app, server)
 
 const PORT = parseInt(process.env['PORT'] || '3030')
 const HOST = process.env['HOST'] || '0.0.0.0'

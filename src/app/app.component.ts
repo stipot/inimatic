@@ -1,4 +1,5 @@
 import { Component } from '@angular/core'
+import { HubComponent } from "./features/hub/hub.component"
 import {
 	IonApp,
 	IonRouterOutlet,
@@ -12,6 +13,8 @@ import {
 } from '@ionic/angular/standalone'
 import { addIcons } from 'ionicons'
 import {
+	apps,
+	laptop,
 	lockClosedOutline,
 	people,
 	phonePortrait,
@@ -32,13 +35,13 @@ import { Platform } from '@ionic/angular'
 		IonTabBar,
 		IonTabs,
 		IonTabButton,
-		IonApp,
+		IonApp, HubComponent,
 	],
 })
 export class AppComponent {
 	isAndroid: boolean
 	constructor(private plt: Platform) {
-		addIcons({ lockClosedOutline, people, phonePortrait, settings })
+		addIcons({ lockClosedOutline, people, phonePortrait, settings, apps, laptop })
 		this.isAndroid =
 			this.plt.platforms().includes('mobile') &&
 			!this.plt.platforms().includes('mobileweb')

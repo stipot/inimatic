@@ -1,5 +1,6 @@
 import { enableProdMode, isDevMode } from '@angular/core'
 import { bootstrapApplication } from '@angular/platform-browser'
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { RouteReuseStrategy, provideRouter } from '@angular/router'
 import {
 	IonicRouteStrategy,
@@ -19,6 +20,7 @@ bootstrapApplication(AppComponent, {
 	providers: [
 		{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
 		provideIonicAngular(),
+		provideHttpClient(withInterceptorsFromDi()),
 		provideRouter(routes),
 		provideServiceWorker('ngsw-worker.js', {
 			enabled: !isDevMode(),
