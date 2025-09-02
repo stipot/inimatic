@@ -33,9 +33,9 @@ export function installAdaosBridge(app: Express, server: http.Server) {
 	})
 
 	// «короткие» HUB-ручки
-	app.get('/api/hub/nodes', async (req, res) => {
+	app.get('/api/subnet/nodes', async (req, res) => {
 		try {
-			const r = await fetch(`${resolveBase(req)}/api/hub/nodes`, {
+			const r = await fetch(`${resolveBase(req)}/api/subnet/nodes`, {
 				headers: { 'X-AdaOS-Token': resolveToken(req) },
 			})
 			if (!r.ok) throw new Error(String(r.status))
@@ -45,9 +45,9 @@ export function installAdaosBridge(app: Express, server: http.Server) {
 		}
 	})
 
-	app.post('/api/hub/ping', async (req, res) => {
+	app.post('/api/subnet/ping', async (req, res) => {
 		try {
-			const r = await fetch(`${resolveBase(req)}/api/hub/ping`, {
+			const r = await fetch(`${resolveBase(req)}/api/subnet/ping`, {
 				method: 'POST',
 				headers: {
 					'content-type': 'application/json',
@@ -67,3 +67,4 @@ export function installAdaosBridge(app: Express, server: http.Server) {
 		res.json({ ok: true, adaos: DEFAULT_BASE, time: new Date().toISOString() })
 	)
 }
+

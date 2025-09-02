@@ -65,6 +65,7 @@ const io = new Server(server, {
 	pingInterval: 10000,
 })
 
+installAdaosBridge(app, server)
 const url = `redis://${process.env['PRODUCTION'] ? 'redis' : 'localhost'}:6379`
 const redisClient = await createClient({ url })
 	.on('error', (err) => console.log('Redis Client Error', err))
@@ -413,8 +414,6 @@ io.on('connect', (socket) => {
 		}
 	})
 })
-
-installAdaosBridge(app, server)
 
 const PORT = parseInt(process.env['PORT'] || '3030')
 const HOST = process.env['HOST'] || '0.0.0.0'

@@ -35,7 +35,7 @@ import { Platform } from '@ionic/angular'
 		IonTabBar,
 		IonTabs,
 		IonTabButton,
-		IonApp, HubComponent,
+		IonApp,
 	],
 })
 export class AppComponent {
